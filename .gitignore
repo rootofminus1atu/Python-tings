@@ -1,3 +1,6 @@
+# special files to ignore 
+catwithhorns-fe460388a5f0.json
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
