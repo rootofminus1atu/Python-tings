@@ -1,13 +1,9 @@
 import requests
 import json
 
-barcode = "5099195002161"
-url = f"https://world.openfoodfacts.org/api/v0/product/{barcode}?fields=packaging.json"
+barcode = "4001724819905"
+url = f"https://world.openfoodfacts.org/api/v0/product/{barcode}.json"
 response = requests.get(url)
-
-
-
-
 
 # printing info
 if response.status_code == 200:
