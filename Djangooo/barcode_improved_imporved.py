@@ -1,8 +1,6 @@
 import requests
 
 
-
-
 def print_barcode_info(barcode):
     def error_thing():
         print(f"Status code: {response.status_code}")
