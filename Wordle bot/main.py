@@ -13,12 +13,6 @@ async def on_ready():
     print(f"{bot.user} is now running!")
 
 
-class Guess:  # I NEED TO ADD A KEYBOARD CLASS OR SOMETHING SIMILAR FOR THE SCORE
-    def __init__(self, word, colors: list, guesser, points):
-        self.word = word
-        self.guesser = guesser
-        self.colors = colors
-        self.points = points  # useless cuz I needed the keyboard for this
 
 
 # check if a number is non-negative

@@ -1,5 +1,7 @@
 
 def conv_func_conv(dict, func, *args):
+    # conv func conv stands for:
+    # convert, apply func, convert back
     inv_dict = {v: k for k, v in dict.items()}
     return inv_dict[func(*[dict[arg] for arg in args])]
 
@@ -66,15 +68,33 @@ class Keyboard:
 class Word:
     def __init__(self, input: str):
         self.letters = []
-        for i in range(len(input)):
-            self.letters.append(Letter(input[i], "gray"))
+        for i, cha in enumerate(input):
+            self.letters.append(Letter(cha, "gray"))
 
-    def __str__(self):
+    def __repr__(self):
         return str([(letter.char, letter.color) for letter in self.letters])
+    def __str__(self):
+        return ''.join([letter.char for letter in self.letters])
 
-    def check_word(self, secret):
-        # check word
-        pass
+    def check_word(self, secret: str):
+        secret_temp = list(secret)
+        guess_temp = list(str(self))
+
+        # check which letters should be highlighted GREEN
+        for i, cha in enumerate(guess_temp):
+            if cha == secret_temp[i]:
+                self.letters[i].color = "green"
+                secret_temp[i] = '*'
+                guess_temp[i] = '*'
+
+        # check which letters should be highlighted YELLOW
+        for i, cha in enumerate(guess_temp):
+            if cha in secret_temp and cha != "*":
+                self.letters[i].color = "yellow"
+                secret_temp[secret_temp.index(cha)] = '*'
+                guess_temp[guess_temp.index(cha)] = '*'
+
+        return self
 
 
 class Row:
@@ -94,7 +114,7 @@ class Display:
     def __str__(self):
         output = ""
         for row in self.rows:
-            output += f"{row.word} by {row.user} +{row.points}\n"
+            output += f"{repr(row.word)} by {row.user} +{row.points}\n"
         return output
 
 
@@ -111,6 +131,7 @@ class Wordle:
     def play(self):
         # randomize a word
         secret = "there"
+        win = False
 
         for i in range(tries):
             # send embed with current progress (or 0 progress at the  beginning
@@ -118,16 +139,15 @@ class Wordle:
             print(self.keyboard)
 
             guess = input("\nGive me a word: ")
-            # god I hate oop
-            # reminer to change word to not word or something
-            # cuz then
-            # the win condition won't work
 
-            # guess.check_word()
             # get user ID
             # get points
 
-            self.display.add_row(Row(Word(guess), 999, 0))
+            self.display.add_row(Row(
+                word=Word(guess).check_word(secret),
+                user=999,
+                points=0)
+            )
 
             # check keyboard
             self.keyboard.update_keyboard(guess, secret)
