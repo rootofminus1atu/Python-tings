@@ -97,6 +97,7 @@ class Word:
         return self
 
 
+
 class Row:
     def __init__(self, word: Word, user: int, points: int):
         self.word = word
@@ -117,20 +118,50 @@ class Display:
             output += f"{repr(row.word)} by {row.user} +{row.points}\n"
         return output
 
+    def calculate_points(self, guess: Word):
+        # I have to add some logic for yellow points too
+
+        total = 0
+        for i, lettr in enumerate(guess.letters):
+            if lettr.color == "green":
+
+                for row in self.rows:
+                    if row.word.letters[i].color == "green":
+                        total -= 2
+                        break
+
+                total += 2
+
+        return total
+
 
 class Wordle:
-    def __init__(self):
+    def __init__(self, secret: str):
         self.display = Display()
         self.keyboard = Keyboard()
+        self.secret = secret
         # and other possible additional properties
 
-    def randomize_word(self):
-        # api to pick a random word
-        pass
+    def attempt(self, guess):
+        # check word
+        # get user ID
+        # get points
+        guess_checked = Word(guess).check_word(self.secret)
+        self.display.add_row(Row(
+            word=guess_checked,
+            user=999,
+            points=self.display.calculate_points(guess_checked))
+        )
+
+        # check keyboard
+        self.keyboard.update_keyboard(guess, self.secret)
+
+        if guess == self.secret:
+            return True
+
+        return False
 
     def play(self):
-        # randomize a word
-        secret = "there"
         win = False
 
         for i in range(tries):
@@ -140,19 +171,7 @@ class Wordle:
 
             guess = input("\nGive me a word: ")
 
-            # get user ID
-            # get points
-
-            self.display.add_row(Row(
-                word=Word(guess).check_word(secret),
-                user=999,
-                points=0)
-            )
-
-            # check keyboard
-            self.keyboard.update_keyboard(guess, secret)
-
-            if guess == secret:
+            if self.attempt(guess) is True:
                 win = True
                 break
 
@@ -162,7 +181,7 @@ class Wordle:
         else:
             print("rip")
             # send lose embed
-
+"""
 hello = Word("hello")
 there = Word("there")
 
@@ -170,7 +189,8 @@ display = Display()
 display.add_row(Row(hello, 999, 2))
 display.add_row(Row(there, 999, 0))
 print(display.rows[1].word.letters[0].color)
-print(display)
+print(display)"""
 
-game = Wordle()
+# the secret word can be randomized outside
+game = Wordle("there")
 game.play()
