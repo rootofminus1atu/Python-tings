@@ -97,7 +97,6 @@ class Word:
         return self
 
 
-
 class Row:
     def __init__(self, word: Word, user: int, points: int):
         self.word = word
@@ -147,6 +146,7 @@ class Wordle:
         # get user ID
         # get points
         guess_checked = Word(guess).check_word(self.secret)
+
         self.display.add_row(Row(
             word=guess_checked,
             user=999,
