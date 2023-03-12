@@ -1,4 +1,4 @@
-import gspread
+"""import gspread
 
 oc_info = {
     "Luki": {
@@ -115,4 +115,81 @@ values = [headers] + rows
 
 # wks.update('A3', 'Eniko')
 
-# wks.update('F2', '=UPPER(A4)', raw=False)
+# wks.update('F2', '=UPPER(A4)', raw=False)"""
+
+test_data = {'user_id': '999', 'reason': 'is criminal', 'warned_by': 'luki', 'warn_level': '3', 'created_at': '0', 'expires_at': '100'}
+
+from pymongo import MongoClient, ASCENDING, IndexModel
+from bson.objectid import ObjectId
+from datetime import datetime, timedelta
+import time
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
+"""  # BAD
+try:
+    data.drop_index("expiration_time")
+except:
+    pass
+index = IndexModel([("expires_at", ASCENDING)], expireAfterSeconds=int(expiration_time.total_seconds()), name="expiration_time")
+data.create_indexes([index])
+"""
+
+"""expiration_time = timedelta(seconds=60)
+print(int(expiration_time.total_seconds()))"""
+
+
+
+
+CONNECTION_STRING = f"mongodb+srv://RootOfMinus1:{os.getenv('MANGO')}@cluster0.ccfbwh6.mongodb.net/?retryWrites=true&w=majority"
+client = MongoClient(CONNECTION_STRING)
+
+db = client.get_database('CatWithHorns')
+warnings = db.warnings
+
+print(warnings.count_documents({}))
+
+
+def change_expiration_time(time):
+    db.command({
+        "collMod": "warnings",
+        "index": {
+            "keyPattern": {"expires_at": 1},
+            "expireAfterSeconds": time
+        }
+    })
+    print(f"Expiration time updated to {time} seconds")
+
+# change_expiration_time(timedelta(days=90).total_seconds())
+
+
+def get_ttl(collection):  # ttl = time to live
+    default = timedelta(days=90)  # the default expiration time, DO NOT change it
+
+    indexes = collection.list_indexes()
+    for index in indexes:
+        if 'expireAfterSeconds' in index:
+            return index['expireAfterSeconds']
+    return default
+
+def add_warn(user_id, reason, level, warned_by):
+    rn = datetime.now()
+    warn_data = {
+        "user_id": str(user_id),
+        "reason": str(reason),
+        "warn_level": int(level),
+        "warned_by": str(warned_by),
+        "created_at": rn,
+    }
+    warnings.insert_one(warn_data)
+
+
+def get_warns(user_id):
+    results = warnings.find({"user_id": str(user_id)})
+    return list(results)
+
+
+def delete_warn(_id):
+    warnings.delete_one({"_id": ObjectId(_id)})
+

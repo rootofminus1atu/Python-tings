@@ -28,9 +28,6 @@ class events(commands.Cog):
                 return
 
         if self.bot.user.mentioned_in(message):
-            if message.author.id == gibbal_id:
-                await message.reply("silly")
-                return
             await message.reply(random.choice(maiq_quotes))
             return
 
