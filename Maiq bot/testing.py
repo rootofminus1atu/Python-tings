@@ -117,12 +117,10 @@ values = [headers] + rows
 
 # wks.update('F2', '=UPPER(A4)', raw=False)"""
 
-test_data = {'user_id': '999', 'reason': 'is criminal', 'warned_by': 'luki', 'warn_level': '3', 'created_at': '0', 'expires_at': '100'}
 
 from pymongo import MongoClient, ASCENDING, IndexModel
 from bson.objectid import ObjectId
 from datetime import datetime, timedelta
-import time
 import os
 from dotenv import load_dotenv
 load_dotenv()
