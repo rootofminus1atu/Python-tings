@@ -2,7 +2,7 @@ import requests
 
 # ?fields=packagings,packaging
 
-barcode = "8076800195057"
+barcode = "6567822008767"
 url = f"https://off:off@ie.openfoodfacts.net/api/v2/product/{barcode}?fields=packagings,packaging"
 response = requests.get(url)
 

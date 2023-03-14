@@ -188,6 +188,3 @@ def get_warns(user_id):
     return list(results)
 
 
-def delete_warn(_id):
-    warnings.delete_one({"_id": ObjectId(_id)})
-

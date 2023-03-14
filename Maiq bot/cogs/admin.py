@@ -1,20 +1,20 @@
 import discord
 from discord.ext import commands
 from discord import app_commands
+from discord import ui
 from colorama import Back, Fore, Style
 from datetime import datetime, timedelta
 import os
-from discord import ui
+from dotenv import load_dotenv
+load_dotenv()
+import inflect
+p = inflect.engine()
 
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 from bson.errors import InvalidId
-from dotenv import load_dotenv
-load_dotenv()
 
-from testing import add_warn, get_ttl, get_warns, delete_warn
-import inflect
-p = inflect.engine()
+from testing import add_warn, get_ttl, get_warns
 
 
 
@@ -92,6 +92,7 @@ class admin(commands.Cog):
     @app_commands.describe(user="The user")
     async def warnings(self, interaction: discord.Interaction, user: discord.User):
         warns = get_warns(user.id)
+
         expiration_time = timedelta(seconds=get_ttl(warnings))
 
         severity = sum([int(warn['warn_level']) for warn in warns])

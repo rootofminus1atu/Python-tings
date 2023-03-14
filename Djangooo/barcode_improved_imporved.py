@@ -1,13 +1,14 @@
 import requests
 
 
+def error_thing(response):
+    print(f"Status code: {response.status_code}")
+    try:
+        print(f"{response.json()['status_verbose']}")
+    except:
+        pass
+
 def print_barcode_info(barcode):
-    def error_thing():
-        print(f"Status code: {response.status_code}")
-        try:
-            print(f"{response.json()['status_verbose']}")
-        except:
-            pass
 
     url = f"https://off:off@ie.openfoodfacts.net/api/v2/product/{barcode}"
     response = requests.get(url)
@@ -17,12 +18,9 @@ def print_barcode_info(barcode):
         try:
             packaging_info = data['product'].get('packaging')
             packagings_info = data['product'].get('packagings')
-            print(data)
-            print("hi")
             print(packaging_info)
-            print("hi")
             print(packagings_info)
         except:
-            error_thing()
+            error_thing(response)
     else:
-        error_thing()
+        error_thing(response)
