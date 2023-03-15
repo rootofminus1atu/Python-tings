@@ -171,7 +171,7 @@ def get_ttl(collection):  # ttl = time to live
             return index['expireAfterSeconds']
     return default
 
-def add_warn(user_id, reason, level, warned_by):
+def add_warn(user_id, reason, level, warned_by, server_id):
     rn = datetime.now()
     warn_data = {
         "user_id": str(user_id),
@@ -179,12 +179,13 @@ def add_warn(user_id, reason, level, warned_by):
         "warn_level": int(level),
         "warned_by": str(warned_by),
         "created_at": rn,
+        "server_id": str(server_id)
     }
     warnings.insert_one(warn_data)
 
 
-def get_warns(user_id):
-    results = warnings.find({"user_id": str(user_id)})
+def get_warns(user_id, server_id):
+    results = warnings.find({"user_id": str(user_id), "server_id": str(server_id)})
     return list(results)
 
 

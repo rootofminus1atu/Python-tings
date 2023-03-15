@@ -36,8 +36,27 @@ warn_levels = {
     3: WarnLevel("🟡", 0xFDCB58, "Medium"),
     5: WarnLevel("🟠", 0xF4900C, "Big"),
     7: WarnLevel("🔴", 0xDD2E44, "Huge"),
-    10: WarnLevel("⚫", 0x000000, "`nil`")
+    10: WarnLevel("⚫", 0x000000, "nil")
 }
+
+
+
+# helper permission checks
+
+def is_mod(interaction: discord.Interaction):
+    if interaction.user.guild_permissions.manage_guild:
+        return True
+    return False
+
+def is_owner():
+    def predicate(interaction: discord.Interaction):
+        if interaction.user == interaction.guild.owner:
+            return True
+    return app_commands.check(predicate)
+
+
+
+
 
 
 class MyModal(ui.Modal, title="ok"):
@@ -91,7 +110,8 @@ class admin(commands.Cog):
     @app_commands.command(name="warnings", description="Check how many warnings a user has")
     @app_commands.describe(user="The user")
     async def warnings(self, interaction: discord.Interaction, user: discord.User):
-        warns = get_warns(user.id)
+        server = interaction.guild
+        warns = get_warns(user.id, server.id)
 
         expiration_time = timedelta(seconds=get_ttl(warnings))
 
@@ -134,7 +154,7 @@ class admin(commands.Cog):
         for key, value in warn_levels.items()
     ])
     async def warn(self, interaction: discord.Interaction, user: discord.User, level: app_commands.Choice[str], reason: str):
-        add_warn(user.id, reason, level.value, interaction.user)
+        add_warn(user.id, reason, level.value, interaction.user, interaction.guild.id)
 
         lvl = warn_levels[int(level.value)]
 
@@ -162,12 +182,24 @@ class admin(commands.Cog):
             await interaction.response.send_message(f"Invalid warning id: {id}")
             return
 
-        warn = warnings.find_one({"_id": object_id})
+        warn = warnings.find_one({"_id": object_id, "server_id": interaction.guild.id})
         if warn is None:
             await interaction.response.send_message(f"Warning with id {id} not found.")
         else:
             warnings.delete_one({"_id": object_id})
             await interaction.response.send_message(f"Deleted warning with id {id}")
+
+
+    @app_commands.command(name="bruh", description="are u admin")
+    @is_owner()
+    async def bruh(self, interaction: discord.Interaction):
+        await interaction.response.send_message("you are admin!")
+
+    @bruh.error
+    async def bruh_error(self, interaction: discord.Interaction, error):
+        print(f"{interaction.user} tried to use the bruh command")
+        await interaction.response.send_message("no")
+
 
 
 
