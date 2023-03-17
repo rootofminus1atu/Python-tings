@@ -47,7 +47,6 @@ def is_mod(interaction: discord.Interaction):
     if interaction.user.guild_permissions.manage_guild:
         return True
     return False
-
 def is_owner():
     def predicate(interaction: discord.Interaction):
         if interaction.user == interaction.guild.owner:
