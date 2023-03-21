@@ -1,25 +1,3 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-"""
-close to working
-but
-no api
-or something idk
-"""
 import requests
 import os
 from dotenv import load_dotenv
@@ -38,4 +16,3 @@ def query(filename):
         print(predictions)
     else:
         print(f"Request failed with status code {response.status_code}")
-
