@@ -3,6 +3,8 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
+# function for getting packaging info from a picture
+
 API_URL = "https://api-inference.huggingface.co/models/yangy50/garbage-classification"
 headers = {"Authorization": f"Bearer {os.getenv('API_URL')}"}
 

@@ -1,6 +1,8 @@
 import cv2
 from pyzbar.pyzbar import decode
 
+# get a barcode number from the camera
+
 cap = cv2.VideoCapture(0)
 cap.set(3, 640)
 cap.set(4, 480)

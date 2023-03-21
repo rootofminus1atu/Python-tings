@@ -2,6 +2,8 @@ import cv2
 from pyzbar.pyzbar import decode
 from barcode_api import print_barcode_info
 
+# all barcode
+
 cap = cv2.VideoCapture(0)
 cap.set(3, 640)
 cap.set(4, 480)

@@ -1,5 +1,6 @@
 import requests
 
+# function for getting barcode info from a barcode number
 
 def error_thing(response):
     print(f"Status code: {response.status_code}")
