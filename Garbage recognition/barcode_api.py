@@ -8,8 +8,8 @@ def error_thing(response):
     except:
         pass
 
-def print_barcode_info(barcode):
 
+def print_barcode_info(barcode):
     url = f"https://off:off@ie.openfoodfacts.org/api/v2/product/{barcode}"
     try:
         response = requests.get(url)
