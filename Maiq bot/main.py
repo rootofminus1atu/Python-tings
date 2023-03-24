@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from discord import app_commands
 from discord.ui import Modal
 from discord.components import TextInput
 import asyncio
@@ -7,8 +8,8 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
-bot = commands.Bot(command_prefix='!', intents=discord.Intents.all())
 
+bot = commands.Bot(command_prefix='!', intents=discord.Intents.all())
 
 # todo:
 # improve admin only commands (and cog load/unload/reload commands)
@@ -67,7 +68,7 @@ async def reload(ctx, cog):
         await ctx.send(f"`{e}`")
 
 
-@bot.command()  # this is bad don't use it
+"""@bot.command()  # this is bad don't use it
 async def update(ctx, com, state):
     com = bot.get_command(com)
     if state == "enable":
@@ -77,7 +78,25 @@ async def update(ctx, com, state):
         com.update(enabled=False)
         await ctx.send(f"!{com} is now {state}d")
     else:
-        await ctx.send("what?")
+        await ctx.send("what?")"""
+
+
+
+@bot.tree.command(name="ping")
+@app_commands.checks.cooldown(1, 30)
+async def ping(interaction: discord.Interaction):
+    await interaction.response.send_message("pong!")
+
+"""async def on_tree_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
+    if isinstance(error, app_commands.CommandOnCooldown):
+        return await interaction.response.send_message(f"Command is currently on cooldown! Try again in **{error.retry_after:.2f}** seconds!")
+    elif isinstance(error, app_commands.MissingPermissions):
+        return await interaction.response.send_message(f"You're missing permissions to use that")
+    elif isinstance(error, NotInGuildError):
+        return await interaction.response.send_message(str(error))
+    else:
+        raise error
+bot.tree.on_error = on_tree_error"""
 
 
 asyncio.run(load_cogs())

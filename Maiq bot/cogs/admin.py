@@ -4,8 +4,9 @@ from discord import app_commands
 from discord import ui
 from colorama import Back, Fore, Style
 from datetime import datetime, timedelta
-import os
 from dotenv import load_dotenv
+import os
+
 load_dotenv()
 import inflect
 p = inflect.engine()
@@ -15,6 +16,13 @@ from bson.objectid import ObjectId
 from bson.errors import InvalidId
 
 from testing import add_warn, get_ttl, get_warns
+
+from cogs.errors import *
+
+
+
+
+
 
 
 
@@ -43,15 +51,16 @@ warn_levels = {
 
 # helper permission checks
 
-def is_mod(interaction: discord.Interaction):
-    if interaction.user.guild_permissions.manage_guild:
-        return True
-    return False
+"""def is_mod(interaction: discord.Interaction):
+    return interaction.user.guild_permissions.manage_guild is True
 def is_owner():
     def predicate(interaction: discord.Interaction):
         if interaction.user == interaction.guild.owner:
             return True
-    return app_commands.check(predicate)
+    return app_commands.check(predicate)"""
+
+
+
 
 
 
@@ -189,16 +198,18 @@ class admin(commands.Cog):
             await interaction.response.send_message(f"Deleted warning with id {id}")
 
 
-    @app_commands.command(name="bruh", description="are u admin")
-    @is_owner()
-    async def bruh(self, interaction: discord.Interaction):
-        await interaction.response.send_message("you are admin!")
 
-    @bruh.error
-    async def bruh_error(self, interaction: discord.Interaction, error):
-        print(f"{interaction.user} tried to use the bruh command")
-        await interaction.response.send_message("no")
 
+    @app_commands.command(name="test", description="are u mod")
+    @errors.is_in_guild(1031977836849922108)
+    # @app_commands.check(is_mod)
+    async def test(self, interaction: discord.Interaction):
+        await interaction.response.send_message("you are a mod!")
+
+    @app_commands.command(name="hguild", description="are u mod")
+    async def guild(self, interaction: discord.Interaction):
+        guild = self.bot.get_guild(1031977836849922108)
+        await interaction.response.send_message(guild.name)
 
 
 

@@ -1,7 +1,16 @@
 import discord
 
 gibbal_id = 698905167629647882
+papiez_channel_id = 1034863959964143666
 
+art_channel_list = [1072264994508525609]
+
+activity_list = [
+    (discord.ActivityType.watching, "Mudcrabs"),
+    (discord.ActivityType.watching, "Dragons"),
+    (discord.ActivityType.playing, "with spells"),
+    (discord.ActivityType.watching, "over Skyrim"),
+]  # add better activities
 
 maiq_quotes = [
     "M'aiq's father was also called M'aiq. As was M'aiq's father's father. At least, that is what his father said. But then again, you can never trust a liar.",
@@ -39,19 +48,6 @@ maiq_quotes = [
     "M'aiq is tired now. Go bother somebody else.",
     "M'aiq is done talking.",
 ]
-
-art_channel_list = [1072264994508525609]
-
-activity_list = [
-    ("Mudcrabs", discord.ActivityType.watching),
-    (discord.ActivityType.playing, "Finding Uranium Ore", ),
-    (discord.ActivityType.playing, "Extracting Uranium", ),
-    (discord.ActivityType.playing, "Collecting Materials", ),
-    (discord.ActivityType.watching, "How to make Nuclear Weapons", ),
-    (discord.ActivityType.playing, "Crafting Nuclear Weapons", ),
-    (discord.ActivityType.playing, "DEFCON", ),
-    (discord.ActivityType.watching, "Nuclear War", ),
-]  # add better activities
 
 lang_codes = {
     'afar': 'aa',
