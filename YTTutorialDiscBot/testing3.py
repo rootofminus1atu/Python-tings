@@ -2,12 +2,12 @@ from pymongo import MongoClient
 from bson.objectid import ObjectId
 import os
 from dotenv import load_dotenv
-
+load_dotenv()
 
 # database testing and learning
 
 
-load_dotenv()
+
 
 CONNECTION_STRING = f"mongodb+srv://RootOfMinus1:{os.getenv('MANGO')}@cluster0.wwryc2o.mongodb.net/?retryWrites=true&w=majority"
 client = MongoClient(CONNECTION_STRING)
