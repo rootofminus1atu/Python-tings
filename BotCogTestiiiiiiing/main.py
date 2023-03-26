@@ -6,12 +6,10 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
+from cogs.test import errors
+
 
 bot = commands.Bot(command_prefix='!', intents=discord.Intents.all())
-
-# todo:
-# improve admin only commands (and cog load/unload/reload commands)
-# error handler
 
 
 @bot.event
@@ -66,11 +64,20 @@ async def reload(ctx, cog):
         await ctx.send(f"`{e}`")
 
 
-
-@bot.tree.command(name="ping")
+# default check and default error type
+# works from here (and from other cogs)
 @app_commands.checks.cooldown(1, 30)
+@bot.tree.command(name="ping")
 async def ping(interaction: discord.Interaction):
     await interaction.response.send_message("pong!")
+
+
+# custom check and custom error type
+# doesn't work here
+@bot.tree.command(name="inmain")
+@errors.lol_check(1058533825682083961)
+async def inmain(interaction: discord.Interaction):
+    await interaction.response.send_message("lol check in main")
 
 
 asyncio.run(load_cogs())
