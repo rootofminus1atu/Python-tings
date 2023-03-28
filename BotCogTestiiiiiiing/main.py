@@ -72,6 +72,10 @@ async def ping(interaction: discord.Interaction):
     await interaction.response.send_message("pong!")
 
 
+
+
+
+
 # custom check and custom error type
 # doesn't work here
 @bot.tree.command(name="inmain")

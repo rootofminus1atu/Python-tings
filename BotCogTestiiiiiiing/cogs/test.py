@@ -58,7 +58,7 @@ class test(commands.Cog):
     @app_commands.command()
     @errors.lol_check(1058533825682083961)
     async def intest(self, interaction: discord.Interaction):
-        await interaction.response.send_message("Test")
+        await interaction.response.send_message("all good because it's in the same file")
 
 
 async def setup(bot: commands.Bot):
