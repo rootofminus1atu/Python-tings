@@ -18,3 +18,4 @@ def query(filename):
         print(predictions)
     else:
         print(f"Request failed with status code {response.status_code}")
+

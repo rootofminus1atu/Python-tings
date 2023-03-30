@@ -27,10 +27,9 @@ while True:
         if response.ok:
             predictions = response.json()
             print(predictions)
-            cv2.waitKey(10000)
+            cv2.waitKey(1000)
         else:
             print(f"Request failed with status code {response.status_code}")
-        break
 
     elif key == 27:  # 27 is the ASCII code for the Esc key
         break
