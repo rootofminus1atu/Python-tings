@@ -5,10 +5,14 @@ papiez_channel_id = 1034863959964143666
 
 art_channel_list = [1072264994508525609]
 
+special_roles = [
+    ("special", 1093218274264760320)
+]
+
 activity_list = [
     (discord.ActivityType.watching, "Mudcrabs"),
     (discord.ActivityType.watching, "Dragons"),
-    (discord.ActivityType.playing, "with spells"),
+    (discord.ActivityType.playing, "with fire spells"),
     (discord.ActivityType.watching, "over Skyrim"),
 ]  # add better activities
 

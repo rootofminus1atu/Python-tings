@@ -28,13 +28,13 @@ def is_owner():
 
 def has_mod_or_roles(special_roles):
     async def predicate(interaction: discord.Interaction) -> bool:
-        if interaction.user.guild_permissions.manage_guild:
+        if interaction.user.guild_permissions.moderate_members:
             return True
 
         user_roles = [role.id for role in interaction.user.roles]
 
         for name, role_id in special_roles:
-            print(name, role_id, user_roles, special_roles)
+            # print(name, role_id, user_roles, special_roles)
             if role_id in user_roles:
                 return True
 

@@ -14,9 +14,8 @@ from pymongo import MongoClient
 from bson.objectid import ObjectId
 from bson.errors import InvalidId
 
-from testing import add_warn, get_ttl, get_warns
-
 from errors import *
+from files import *
 
 
 
@@ -47,9 +46,41 @@ warn_levels = {
     10: WarnLevel("⚫", 0x000000, "nil")
 }
 
-special_roles = [
-    ("special", 1093218274264760320)
-]
+# DB MANIPULATION HELPER FUNCTIONS
+# currently this whole db thing is a mess
+# in the future I'd like to restructure all that into something more oop-like
+# and most (if not all) db related code could be kept in a separate file
+def get_ttl(collection):  # ttl = time to live
+    default = timedelta(days=90)  # the default expiration time, DO NOT change it
+
+    indexes = collection.list_indexes()
+    for index in indexes:
+        if 'expireAfterSeconds' in index:
+            return index['expireAfterSeconds']
+    return default
+
+def add_warn(user_id, reason, level, mod_id, server_id):
+    rn = datetime.now()
+    warn_data = {
+        "user_id": str(user_id),
+        "mod_id": str(mod_id),
+        "server_id": str(server_id),
+        "warn_level": int(level),
+        "reason": str(reason),
+        "created_at": rn,
+    }
+    warnings.insert_one(warn_data)
+
+
+def get_warns(user_id, server_id):
+    results = warnings.find({"user_id": str(user_id), "server_id": str(server_id)})
+    return list(results)
+
+def get_all_warns(user_id):
+    results = warnings.find({"user_id": str(user_id)})
+    return list(results)
+
+
 
 
 
@@ -84,6 +115,7 @@ class admin(commands.Cog):
         await channel.send(text)
         await interaction.response.send_message("Mai'q spoke.", ephemeral=True)
 
+
     @commands.command(aliases=['close', 'kill'])
     # @commands.has_permissions(administrator=True)  # how error handling
     async def shutdown(self, ctx):
@@ -101,6 +133,7 @@ class admin(commands.Cog):
     async def modal(self, interaction: discord.Interaction):
         await interaction.response.send_modal(MyModal())
 
+    @has_mod_or_roles(special_roles)
     @app_commands.command(name="warnings", description="Check how many warnings a user has")
     @app_commands.describe(user="The user")
     async def warnings(self, interaction: discord.Interaction, user: discord.User):
@@ -143,6 +176,7 @@ class admin(commands.Cog):
 
         await interaction.response.send_message(embed=embed)
 
+    @has_mod_or_roles(special_roles)
     @app_commands.command(name="warn", description="Warn someone")
     @app_commands.describe(user="The user", level="How severe the warn is", reason="What reason")
     @app_commands.choices(level=[
@@ -165,10 +199,10 @@ class admin(commands.Cog):
 
         try:
             await user.send(embed=embed)
-        except discord.Forbidden:
+        except (discord.Forbidden, discord.HTTPException, AttributeError):
             await interaction.followup.send(f"Could not DM {user.mention}")
 
-
+    @has_mod_or_roles(special_roles)
     @app_commands.command(name="delwarn", description="Remove a warning")
     @app_commands.describe(id="id of the warning you want to delete")
     async def delwarn(self, interaction: discord.Interaction, id: str):

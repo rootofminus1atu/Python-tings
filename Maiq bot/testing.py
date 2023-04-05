@@ -140,56 +140,15 @@ print(int(expiration_time.total_seconds()))"""
 
 
 
-CONNECTION_STRING = f"mongodb+srv://RootOfMinus1:{os.getenv('MANGO')}@cluster0.ccfbwh6.mongodb.net/?retryWrites=true&w=majority"
-client = MongoClient(CONNECTION_STRING)
-
-db = client.get_database('CatWithHorns')
-warnings = db.warnings
 
 # print(warnings.count_documents({}))
 
 
-def change_expiration_time(time):
-    db.command({
-        "collMod": "warnings",
-        "index": {
-            "keyPattern": {"expires_at": 1},
-            "expireAfterSeconds": time
-        }
-    })
-    print(f"Expiration time updated to {time} seconds")
+
 
 # change_expiration_time(timedelta(days=90).total_seconds())
 
 
-def get_ttl(collection):  # ttl = time to live
-    default = timedelta(days=90)  # the default expiration time, DO NOT change it
 
-    indexes = collection.list_indexes()
-    for index in indexes:
-        if 'expireAfterSeconds' in index:
-            return index['expireAfterSeconds']
-    return default
-
-def add_warn(user_id, reason, level, mod_id, server_id):
-    rn = datetime.now()
-    warn_data = {
-        "user_id": str(user_id),
-        "reason": str(reason),
-        "warn_level": int(level),
-        "mod_id": str(mod_id),
-        "created_at": rn,
-        "server_id": str(server_id)
-    }
-    warnings.insert_one(warn_data)
-
-
-def get_warns(user_id, server_id):
-    results = warnings.find({"user_id": str(user_id), "server_id": str(server_id)})
-    return list(results)
-
-def get_all_warns(user_id):
-    results = warnings.find({"user_id": str(user_id)})
-    return list(results)
 
 

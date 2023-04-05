@@ -14,4 +14,16 @@ db = client.get_database('CatWithHorns')
 warnings = db.warnings
 
 
-change_expiration_time(timedelta(days=90).total_seconds())
+def change_expiration_time(db, time):
+    db.command({
+        "collMod": "warnings",
+        "index": {
+            "keyPattern": {"expires_at": 1},
+            "expireAfterSeconds": time
+        }
+    })
+    print(f"Expiration time updated to {time} seconds")
+
+
+# change_expiration_time(db, timedelta(days=90).total_seconds())
+
