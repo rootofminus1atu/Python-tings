@@ -2,11 +2,10 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 from discord import ui
-from colorama import Back, Fore, Style
+from colorama import Fore, Style
 from datetime import datetime, timedelta
-from dotenv import load_dotenv
 import os
-
+from dotenv import load_dotenv
 load_dotenv()
 import inflect
 p = inflect.engine()
@@ -17,7 +16,8 @@ from bson.errors import InvalidId
 
 from testing import add_warn, get_ttl, get_warns
 
-from cogs.errors import *
+from errors import *
+
 
 
 
@@ -47,21 +47,9 @@ warn_levels = {
     10: WarnLevel("⚫", 0x000000, "nil")
 }
 
-
-
-# helper permission checks
-
-"""def is_mod(interaction: discord.Interaction):
-    return interaction.user.guild_permissions.manage_guild is True
-def is_owner():
-    def predicate(interaction: discord.Interaction):
-        if interaction.user == interaction.guild.owner:
-            return True
-    return app_commands.check(predicate)"""
-
-
-
-
+special_roles = [
+    ("special", 1093218274264760320)
+]
 
 
 
@@ -89,14 +77,12 @@ class admin(commands.Cog):
     async def on_ready(self):
         print(Fore.LIGHTGREEN_EX + self.__class__.__name__ + Fore.RESET + " cog loaded")
 
+    @has_mod_or_roles(special_roles)
     @app_commands.command(name="say", description="What will Mai'q speak? Where shall he speak?")
     @app_commands.describe(text="What I'll say:", channel="Where I'll say it:")
     async def say(self, interaction: discord.Interaction, text: str, channel: discord.TextChannel):
-        if interaction.user.guild_permissions.administrator:
-            await channel.send(text)
-            await interaction.response.send_message("Mai'q spoke.", ephemeral=True)
-        else:
-            await interaction.response.send_message("Mai'q won't listen to you.", ephemeral=True)
+        await channel.send(text)
+        await interaction.response.send_message("Mai'q spoke.", ephemeral=True)
 
     @commands.command(aliases=['close', 'kill'])
     # @commands.has_permissions(administrator=True)  # how error handling
@@ -148,8 +134,10 @@ class admin(commands.Cog):
             exp_date = warn_date + expiration_time
             exp_str = f"""{exp_date.strftime(f'{p.ordinal(exp_date.strftime("%d"))} %B %Y')}"""
 
+            fat_discord_mod = await self.bot.fetch_user(int(warn['mod_id']))
+
             embed.add_field(
-                name=f"{warn_levels[warn['warn_level']].emoji} +{warn['warn_level']} | ID: {warn['_id']} | Moderator: {warn['warned_by']}",
+                name=f"{warn_levels[warn['warn_level']].emoji} +{warn['warn_level']} | ID: {warn['_id']} | Moderator: {fat_discord_mod}",
                 value=f"Reason: {warn['reason']}\nDate: {date_str}\nExpires: {exp_str}",
                 inline=False)
 
@@ -162,7 +150,7 @@ class admin(commands.Cog):
         for key, value in warn_levels.items()
     ])
     async def warn(self, interaction: discord.Interaction, user: discord.User, level: app_commands.Choice[str], reason: str):
-        add_warn(user.id, reason, level.value, interaction.user, interaction.guild.id)
+        add_warn(user.id, reason, level.value, interaction.user.id, interaction.guild.id)
 
         lvl = warn_levels[int(level.value)]
 
@@ -190,7 +178,7 @@ class admin(commands.Cog):
             await interaction.response.send_message(f"Invalid warning id: {id}")
             return
 
-        warn = warnings.find_one({"_id": object_id, "server_id": interaction.guild.id})
+        warn = warnings.find_one({"_id": object_id, "server_id": str(interaction.guild.id)})
         if warn is None:
             await interaction.response.send_message(f"Warning with id {id} not found.")
         else:
@@ -201,7 +189,7 @@ class admin(commands.Cog):
 
 
     @app_commands.command(name="test", description="are u mod")
-    @errors.is_in_guild(1031977836849922108)
+    @is_in_guild(1031977836849922108)
     # @app_commands.check(is_mod)
     async def test(self, interaction: discord.Interaction):
         await interaction.response.send_message("you are a mod!")

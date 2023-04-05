@@ -12,6 +12,9 @@ class CheckFailedLol(app_commands.CheckFailure):
         super().__init__(f"Failed to LOL (user) for {lol_id} ({bot.get_user(lol_id)!r})")
 
 
+
+
+
 # the cog whose purpose is to handle errors
 class errors(commands.Cog):
     def __init__(self, bot):
@@ -24,6 +27,7 @@ class errors(commands.Cog):
     # custom error check decorators for commands
     @staticmethod
     def lol_check(lol_id: int):
+        # this lol_check just checks if the command invoker has the id provided to it
         async def predicate(interaction: discord.Interaction) -> bool:
             if interaction.user.id != lol_id:
                 raise CheckFailedLol(lol_id, interaction.client)
@@ -45,6 +49,8 @@ class errors(commands.Cog):
 
 
 
+
+
 # the cog with commands
 class test(commands.Cog):
     def __init__(self, bot):
@@ -56,12 +62,12 @@ class test(commands.Cog):
 
     # but it works just fine from here
     @app_commands.command()
-    @errors.lol_check(1058533825682083961)
+    @errors.lol_check(1061385736642908210)
     async def intest(self, interaction: discord.Interaction):
         await interaction.response.send_message("all good because it's in the same file")
 
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(errors(bot))
-    bot.tree.on_error = errors.on_tree_error
     await bot.add_cog(test(bot))
+    bot.tree.on_error = errors.on_tree_error

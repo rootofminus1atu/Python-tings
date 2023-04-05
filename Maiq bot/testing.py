@@ -146,7 +146,7 @@ client = MongoClient(CONNECTION_STRING)
 db = client.get_database('CatWithHorns')
 warnings = db.warnings
 
-print(warnings.count_documents({}))
+# print(warnings.count_documents({}))
 
 
 def change_expiration_time(time):
@@ -171,13 +171,13 @@ def get_ttl(collection):  # ttl = time to live
             return index['expireAfterSeconds']
     return default
 
-def add_warn(user_id, reason, level, warned_by, server_id):
+def add_warn(user_id, reason, level, mod_id, server_id):
     rn = datetime.now()
     warn_data = {
         "user_id": str(user_id),
         "reason": str(reason),
         "warn_level": int(level),
-        "warned_by": str(warned_by),
+        "mod_id": str(mod_id),
         "created_at": rn,
         "server_id": str(server_id)
     }
@@ -186,6 +186,10 @@ def add_warn(user_id, reason, level, warned_by, server_id):
 
 def get_warns(user_id, server_id):
     results = warnings.find({"user_id": str(user_id), "server_id": str(server_id)})
+    return list(results)
+
+def get_all_warns(user_id):
+    results = warnings.find({"user_id": str(user_id)})
     return list(results)
 
 

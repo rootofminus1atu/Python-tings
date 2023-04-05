@@ -2,8 +2,8 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 from colorama import Fore
+from errors import *
 
-from cogs.test import errors
 
 
 class admin(commands.Cog):
@@ -16,7 +16,7 @@ class admin(commands.Cog):
 
     # doesn't work here either
     @app_commands.command()
-    @errors.lol_check(1061385736642908210)
+    @is_in_guild(1031977836849922108)
     async def inadmin(self, interaction: discord.Interaction):
         await interaction.response.send_message("lol check in admin")
 

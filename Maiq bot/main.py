@@ -7,9 +7,10 @@ import asyncio
 import os
 from dotenv import load_dotenv
 load_dotenv()
+from errors import *
 
 
-bot = commands.Bot(command_prefix='!', intents=discord.Intents.all())
+bot = commands.Bot(command_prefix='!', intents=discord.Intents.all(), tree_cls=TreeWithErrors)
 
 # todo:
 # improve admin only commands (and cog load/unload/reload commands)
@@ -86,6 +87,13 @@ async def update(ctx, com, state):
 @app_commands.checks.cooldown(1, 30)
 async def ping(interaction: discord.Interaction):
     await interaction.response.send_message("pong!")
+
+class NotInGuildError(app_commands.CheckFailure):
+    def __init__(self, guild_id: int, bot: commands.Bot):
+        self.guild_id = guild_id
+        self.bot = bot
+        super().__init__(
+            f"You must be in the server '{bot.get_guild(guild_id)!r}' with ID {guild_id} to use this command.")
 
 """async def on_tree_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
     if isinstance(error, app_commands.CommandOnCooldown):
