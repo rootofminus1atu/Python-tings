@@ -1,8 +1,10 @@
-import pygame
+from pydub import AudioSegment
+from pydub.generators import Sine
 
-pygame.init()
-pygame.mixer.init()
-firstSound = pygame.mixer.music('/home/pi/laserharp-sounds/samples/ambi_dark.wav')
-secondSound = pygame.mixer.music('/home/pi/laserharp-sounds/samples/ambi_choir.wav')
-firstSound.play()
-secondSound.play()
+duration = 500  # milliseconds
+frequency = 440  # Hz
+amplitude = 0.5  # 0.0 - 1.0
+
+beep = Sine(frequency).to_audio_segment(duration=duration).apply_gain(amplitude * 100)
+
+beep.export("beep.wav", format="wav")
