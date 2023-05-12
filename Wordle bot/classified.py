@@ -22,19 +22,22 @@ class Letter:
         self.char = char
         self.color = color
 
+    def __repr__(self):
+        return f"({self.char}, {self.color})"
+
     def __str__(self):
-        return str((self.char, self.color))
+        return self.char
 
 
 class Keyboard:
     def __init__(self):
-        keyboard_letters = "qwertyuiopasdfghjklzxcvbnm"
+        self.keyboard_letters = "qwertyuiopasdfghjklzxcvbnm"
         self.keys = {}
-        for letter in keyboard_letters:
+        for letter in self.keyboard_letters:
             self.keys[letter] = "white"
 
-    def __str__(self):
-        return str(self.keys)
+    def __repr__(self):
+        return f"{self.keys}"
 
     def __getitem__(self, key):
         return self.keys[key]
@@ -42,7 +45,7 @@ class Keyboard:
     def __setitem__(self, key, value):
         self.keys[key] = value
 
-    def update_keyboard(self, guess, secret):
+    def update_keyboard(self, guess: str, secret: str):
         for i in range(len(guess)):
             if guess[i] == secret[i]:
                 self[guess[i]] = conv_func_conv(color_dict, max, self[guess[i]], "green")
@@ -67,17 +70,16 @@ class Keyboard:
 
 class Word:
     def __init__(self, input: str):
-        self.letters = []
-        for i, cha in enumerate(input):
-            self.letters.append(Letter(cha, "gray"))
+        self.letters = [Letter(cha, "gray") for cha in input]
 
     def __repr__(self):
-        return str([(letter.char, letter.color) for letter in self.letters])
+        return f"{[(letter.char, letter.color) for letter in self.letters]}"
+    
     def __str__(self):
         return ''.join([letter.char for letter in self.letters])
 
     def check_word(self, secret: str):
-        secret_temp = list(secret)
+        secret_temp = list(str(secret))
         guess_temp = list(str(self))
 
         # check which letters should be highlighted GREEN
@@ -111,7 +113,7 @@ class Display:
     def add_row(self, row: Row):
         self.rows.append(row)
 
-    def __str__(self):
+    def __repr__(self):
         output = ""
         for row in self.rows:
             output += f"{repr(row.word)} by {row.user} +{row.points}\n"
@@ -139,48 +141,54 @@ class Wordle:
         self.display = Display()
         self.keyboard = Keyboard()
         self.secret = secret
+        self.won = False
         # and other possible additional properties
 
-    def attempt(self, guess):
+    def attempt(self, guess: str):
         # check word
         # get user ID
         # get points
         guess_checked = Word(guess).check_word(self.secret)
+        user_id = 999
+        points = self.display.calculate_points(guess_checked)
 
         self.display.add_row(Row(
             word=guess_checked,
-            user=999,
-            points=self.display.calculate_points(guess_checked))
+            user=user_id,
+            points=points)
         )
 
         # check keyboard
         self.keyboard.update_keyboard(guess, self.secret)
 
         if guess == self.secret:
-            return True
+            self.won = True
 
-        return False
-
-    def play(self):
-        win = False
-
+    def console_play(self):
         for i in range(tries):
             # send embed with current progress (or 0 progress at the  beginning
             print(self.display)
             print(self.keyboard)
 
             guess = input("\nGive me a word: ")
+            
+            self.attempt(guess)
 
-            if self.attempt(guess) is True:
-                win = True
+            if self.won is True:
                 break
 
-        if win is True:
+        print(self.display)
+        print(self.keyboard)
+        
+        if self.won is True:
             print("you won")
             # send win embed
         else:
             print("rip")
             # send lose embed
+            
+    def discord_play(self):
+        pass
 """
 hello = Word("hello")
 there = Word("there")
@@ -191,6 +199,8 @@ display.add_row(Row(there, 999, 0))
 print(display.rows[1].word.letters[0].color)
 print(display)"""
 
+
 # the secret word can be randomized outside
+# or inside idk
 game = Wordle("there")
 game.play()
