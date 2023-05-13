@@ -26,6 +26,10 @@ async def on_ready():
         print(e)
    
    
+def get_emojis():
+    return [emoji['emoji'] for emoji in db.all()]
+
+   
 @bot.command()
 async def addemoji(ctx, emoji):
     print(db.search(Query().emoji == emoji))
@@ -46,29 +50,19 @@ async def removeemoji(ctx, emoji):
 
 @bot.command()
 async def seeemojis(ctx):
-    await ctx.send(db.all())    
-     
-"""async def setup_db():
-    async with aiosqlite.connect('prohibited_emojis.db') as db:
-        await db.execute('CREATE TABLE IF NOT EXISTS prohibited_emojis (emoji TEXT)')
-        await db.commit()"""
- 
-     
-"""       
-@bot.command()
-async def addemoji(ctx, emoji):
-    async with aiosqlite.connect("main.db") as db:
-        async with db.cursor() as cursor:
-            await cursor.execute('SELECT * FROM prohibited_emojis WHERE emoji = ?', (emoji,))
-            found = await cursor.fetchone()
-            if found is None:
-                await cursor.execute('INSERT INTO prohibited_emojis VALUES (?)', (emoji,))
-            else:
-                await ctx.send(f"{found} already exists")
-        await db.commit()
-        
-    await ctx.send(f"Added {emoji} to the prohibited emojis")
-        """
+    emojis = get_emojis()
+    print(emojis)
+    print(", ".join(emojis))
+    
+    lst = [f"\{emoji}" for emoji in emojis]
+    
+    embed=discord.Embed(
+        title="Prohibited Emojis", 
+        description=f"{', '.join(emojis)}", 
+        color=discord.Color.blurple())
+    
+    await ctx.send(embed=embed)    
+
         
 cached_messages = {}
 cached_users = {}
@@ -99,13 +93,7 @@ async def on_raw_reaction_add(payload):
     # Print the reaction event
     print(f"User {user.name} reacted with {emoji} in channel {channel.name} to message {message.content}")
     await channel.send(f"User {user.name} reacted with {emoji} in channel {channel.name} to message {message.content}") 
-    
-    
-prohibited_emojis = [
-    '👽',
-    '😈', 
-    '<a:trishadance:886318268464365638>'
-]
+
 
     
 @bot.event
@@ -114,12 +102,17 @@ async def on_reaction_add(reaction: discord.Reaction, user: discord.User):
     channel = message.channel
     color = discord.Color.blurple()
     
-    if str(reaction.emoji) in prohibited_emojis:
+    if str(reaction.emoji) in [emoji['emoji'] for emoji in db.all()]:
         await reaction.clear()
         color = discord.Color.red()
     
+    if type(reaction.emoji) != str:
+        emoji_str = f"{'<a:' if reaction.emoji.animated else '<:'}{reaction.emoji.name}\\:{reaction.emoji.id}>"
+    else:
+        emoji_str = reaction.emoji
+        
     embed = discord.Embed( 
-        description=f"Reacted with {reaction.emoji} in channel {channel.jump_url} to message {message.jump_url} ({message.content[:100]}{'...' if len(message.content) > 100 else ''})",
+        description=f"Reacted with {emoji_str} to message {message.jump_url} ({message.content[:100]}{'...' if len(message.content) > 100 else ''})",
         color=color)
     embed.set_author(
         name=user.name, 
