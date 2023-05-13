@@ -2,12 +2,11 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 import os
-import sqlite3
-import aiosqlite
+from tinydb import TinyDB, Query
 from dotenv import load_dotenv
 load_dotenv()
 
-
+db = TinyDB('db.json')
 
 bot = commands.Bot(command_prefix='!', intents=discord.Intents.all())
 
@@ -15,25 +14,47 @@ bot = commands.Bot(command_prefix='!', intents=discord.Intents.all())
 async def on_ready():
     print(f'{bot.user} has connected to Discord!')
     
-    async with aiosqlite.connect("main.db") as db:
+    """async with aiosqlite.connect("main.db") as db:
         async with db.cursor() as cursor:
             await cursor.execute("CREATE TABLE IF NOT EXISTS prohibited_emojis (emoji TEXT PRIMARY KEY)")
-        await db.commit()
+        await db.commit()"""
         
     try:
         synced = await bot.tree.sync()
         print(f"Synced {len(synced)} command(s)")
     except Exception as e:
         print(e)
-       
+   
+   
+@bot.command()
+async def addemoji(ctx, emoji):
+    print(db.search(Query().emoji == emoji))
+    if db.search(Query().emoji == emoji):
+        await ctx.send(f"{emoji} already exists")
+    else:
+        db.insert({'emoji': emoji})
+        await ctx.send(f"Added {emoji} to the prohibited emojis")
+
+@bot.command()
+async def removeemoji(ctx, emoji):
+    print(db.search(Query().emoji == emoji))
+    if db.search(Query().emoji == emoji):
+        db.remove(Query().emoji == emoji)
+        await ctx.send(f"Removed {emoji} from the prohibited emojis")
+    else:
+        await ctx.send(f"{emoji} does not exist")
+
+@bot.command()
+async def seeemojis(ctx):
+    await ctx.send(db.all())    
      
-async def setup_db():
+"""async def setup_db():
     async with aiosqlite.connect('prohibited_emojis.db') as db:
         await db.execute('CREATE TABLE IF NOT EXISTS prohibited_emojis (emoji TEXT)')
-        await db.commit()
+        await db.commit()"""
  
      
-       
+"""       
 @bot.command()
 async def addemoji(ctx, emoji):
     async with aiosqlite.connect("main.db") as db:
@@ -47,7 +68,7 @@ async def addemoji(ctx, emoji):
         await db.commit()
         
     await ctx.send(f"Added {emoji} to the prohibited emojis")
-        
+        """
         
 cached_messages = {}
 cached_users = {}
