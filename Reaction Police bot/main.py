@@ -49,13 +49,31 @@ async def on_raw_reaction_add(payload):
     await channel.send(f"User {user.name} reacted with {emoji} in channel {channel.name} to message {message.content}") 
     
     
+prohibited_emojis = [
+    '👽',
+    '😈', 
+    '<a:trishadance:886318268464365638>'
+]
+
+    
 @bot.event
-async def on_reaction_add(reaction, user):
+async def on_reaction_add(reaction: discord.Reaction, user: discord.User):
     message = reaction.message
     channel = message.channel
+    color = discord.Color.blurple()
+    
+    if str(reaction.emoji) in prohibited_emojis:
+        await reaction.clear()
+        color = discord.Color.red()
+    
+    embed = discord.Embed( 
+        description=f"Reacted with {reaction.emoji} in channel {channel.jump_url} to message {message.jump_url} ({message.content[:100]}{'...' if len(message.content) > 100 else ''})",
+        color=color)
+    embed.set_author(
+        name=user.name, 
+        icon_url=user.avatar.url)
 
-    print(f"User {user.name} reacted with {reaction.emoji} in channel {channel.name} to message {message.content}")
-    await channel.send(f"User {user.name} reacted with {reaction.emoji} in channel {channel.name} to message {message.content}")
+    await channel.send(embed=embed)
 
 
 @bot.tree.command(name="user", description="Get a user's info")
@@ -72,9 +90,6 @@ async def user(interaction: discord.Interaction, user: discord.User):
     await interaction.response.send_message(f"{user} can't react anymore")
 
 
-@bot.command
-
-    
 @bot.tree.command(name="ping")
 @app_commands.checks.cooldown(1, 30)
 async def ping(interaction: discord.Interaction):
