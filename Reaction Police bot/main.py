@@ -1,21 +1,52 @@
 import discord
 from discord.ext import commands
 from discord import app_commands
-import asyncio
 import os
+import sqlite3
+import aiosqlite
 from dotenv import load_dotenv
 load_dotenv()
+
+
 
 bot = commands.Bot(command_prefix='!', intents=discord.Intents.all())
 
 @bot.event
 async def on_ready():
     print(f'{bot.user} has connected to Discord!')
+    
+    async with aiosqlite.connect("main.db") as db:
+        async with db.cursor() as cursor:
+            await cursor.execute("CREATE TABLE IF NOT EXISTS prohibited_emojis (emoji TEXT PRIMARY KEY)")
+        await db.commit()
+        
     try:
         synced = await bot.tree.sync()
         print(f"Synced {len(synced)} command(s)")
     except Exception as e:
         print(e)
+       
+     
+async def setup_db():
+    async with aiosqlite.connect('prohibited_emojis.db') as db:
+        await db.execute('CREATE TABLE IF NOT EXISTS prohibited_emojis (emoji TEXT)')
+        await db.commit()
+ 
+     
+       
+@bot.command()
+async def addemoji(ctx, emoji):
+    async with aiosqlite.connect("main.db") as db:
+        async with db.cursor() as cursor:
+            await cursor.execute('SELECT * FROM prohibited_emojis WHERE emoji = ?', (emoji,))
+            found = await cursor.fetchone()
+            if found is None:
+                await cursor.execute('INSERT INTO prohibited_emojis VALUES (?)', (emoji,))
+            else:
+                await ctx.send(f"{found} already exists")
+        await db.commit()
+        
+    await ctx.send(f"Added {emoji} to the prohibited emojis")
         
         
 cached_messages = {}
@@ -74,6 +105,12 @@ async def on_reaction_add(reaction: discord.Reaction, user: discord.User):
         icon_url=user.avatar.url)
 
     await channel.send(embed=embed)
+
+
+
+
+
+
 
 
 @bot.tree.command(name="user", description="Get a user's info")
