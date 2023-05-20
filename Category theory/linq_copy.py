@@ -97,6 +97,7 @@ class IterBetter:
         msg = f"Filtering {func} over {self.value}"
         filtered = self.original_type(filter(func, self.value))
         return filtered, msg
+
     
     
 mylst = IterBetter([1,2,3,4,5])
@@ -110,12 +111,13 @@ newlst = (
 print(newlst.log)
 print(newlst)
 
-mytup = IterBetter((1,2,3,4,5)).newmap(lambda x: x + 1).newmap(lambda x: x + 1).newmap(lambda x: x + 1)
+mytup = (
+    IterBetter((1,2,3,4,5))
+    .newmap(lambda x: x + 1)
+    .newmap(lambda x: x + 1)
+    .newmap(lambda x: x + 1)
+)
 
 print(mytup.log)
 print(mytup)
-
-
-lest = [1, True]
-print(IterBetter(lest).newmap(lambda x: str(x)))
 
