@@ -1,4 +1,4 @@
-from typing import Iterable
+from typing import Iterable, Callable, TypeVar, List, Tuple
 from time import time, sleep
 
 
@@ -60,10 +60,11 @@ for i in [100, 500, 1000, 10000]:
 """
 
 
+T = TypeVar('T')
 class IterBetter:
-    def __init__(self, value: Iterable, log=[]):
+    def __init__(self, value: Iterable[T], log: List[str] = None):
         self.value = value
-        self.log = log
+        self.log = log or []
         self.original_type = type(value)
         
     def __repr__(self):
@@ -74,37 +75,47 @@ class IterBetter:
     
     def __setitem__(self, index, value):
         self.value[index] = value
-        
+    
+    
     @staticmethod
-    def with_bind(f):
+    def bindify(f: Callable[['IterBetter', Callable[[T], T]], Tuple[Iterable[T], str]]):
         
-        def wrapper(self, func):
+        def wrapper(self, func: Callable[[T], T]) -> 'IterBetter':
             result, msg = f(self, func)
-            return self._create_instance(self.original_type(result), self.log + [msg])
+            return IterBetter(result, self.log + [msg])
         
         return wrapper
     
-    def _create_instance(self, val):
-        return IterBetter(self.original_type(val), self.log)
-    
-    @with_bind
-    def map(self, func):
+    @bindify
+    def newmap(self, func: Callable[[T], T]) -> Tuple[Iterable[T], str]:
         msg = f"Mapping {func} over {self.value}"
-        return self._create_instance(map(func, self.value)), msg
+        mapped = self.original_type(map(func, self.value))
+        return mapped, msg
     
-    @with_bind
-    def filter(self, func):
+    @bindify
+    def newfilter(self, func: Callable[[T], bool]) -> Tuple[Iterable[T], str]:
         msg = f"Filtering {func} over {self.value}"
-        return self._create_instance(filter(func, self.value)), msg
+        filtered = self.original_type(filter(func, self.value))
+        return filtered, msg
     
     
 mylst = IterBetter([1,2,3,4,5])
 newlst = (
     mylst
-    .map(lambda x: x + 1)
-    .map(lambda x: x + 1)
-    .map(lambda x: x + 1)
+    .newmap(lambda x: x + 1)
+    .newfilter(lambda x: x % 2 == 0)
+    .newmap(lambda x: x * 3)
 )
 
 print(newlst.log)
 print(newlst)
+
+mytup = IterBetter((1,2,3,4,5)).newmap(lambda x: x + 1).newmap(lambda x: x + 1).newmap(lambda x: x + 1)
+
+print(mytup.log)
+print(mytup)
+
+
+lest = [1, True]
+print(IterBetter(lest).newmap(lambda x: str(x)))
+
