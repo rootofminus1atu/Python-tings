@@ -1,15 +1,5 @@
 from typing import Iterable, Callable, TypeVar, List, Tuple
-from time import time, sleep
 
-
-def timer(f):
-    def wrapper(*args, **kwargs):
-        start = time()
-        result = f(*args, **kwargs)
-        end = time()
-        print(f"Function {f.__name__} took {end - start} seconds")
-        return result
-    return wrapper
 
 class ListBetter:
     def __init__(self, value: Iterable):
@@ -120,4 +110,9 @@ mytup = (
 
 print(mytup.log)
 print(mytup)
+
+
+def test(h):
+    """This is a test function"""
+    print(h)
 
