@@ -26,10 +26,14 @@ async def on_ready():
     except Exception as e:
         print(e)
 
+excluded_cogs = [
+    'admin',
+    'info'
+]
 
 async def load_cogs():
     for file in os.listdir('./cogs'):
-        if file.endswith('.py'):
+        if file.endswith('.py') and file[:-3] not in excluded_cogs:
             await bot.load_extension(f'cogs.{file[:-3]}')
 
 
@@ -69,25 +73,13 @@ async def reload(ctx, cog):
         await ctx.send(f"`{e}`")
 
 
-"""@bot.command()  # this is bad don't use it
-async def update(ctx, com, state):
-    com = bot.get_command(com)
-    if state == "enable":
-        com.update(enabled=True)
-        await ctx.send(f"!{com} is now {state}d")
-    elif state == "disable":
-        com.update(enabled=False)
-        await ctx.send(f"!{com} is now {state}d")
-    else:
-        await ctx.send("what?")"""
-
-
 
 @bot.tree.command(name="ping")
 @app_commands.checks.cooldown(1, 30)
 async def ping(interaction: discord.Interaction):
     await interaction.response.send_message("pong!")
 
+"""
 class NotInGuildError(app_commands.CheckFailure):
     def __init__(self, guild_id: int, bot: commands.Bot):
         self.guild_id = guild_id
@@ -95,7 +87,7 @@ class NotInGuildError(app_commands.CheckFailure):
         super().__init__(
             f"You must be in the server '{bot.get_guild(guild_id)!r}' with ID {guild_id} to use this command.")
 
-"""async def on_tree_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
+async def on_tree_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
     if isinstance(error, app_commands.CommandOnCooldown):
         return await interaction.response.send_message(f"Command is currently on cooldown! Try again in **{error.retry_after:.2f}** seconds!")
     elif isinstance(error, app_commands.MissingPermissions):

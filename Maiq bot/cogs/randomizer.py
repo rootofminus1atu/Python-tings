@@ -42,13 +42,13 @@ class randomizer(commands.Cog):
 
     @app_commands.command(name="cat", description="Mai'q will look for fluffy creatures")
     async def cat(self, interaction: discord.Interaction):
-        cat = requests.get("https://aws.random.cat/meow").json()
-
+        cat = requests.get("https://api.thecatapi.com/v1/images/search").json()
+        
         embed = discord.Embed(
-            title="🐱 Mai'q found a Khajiit",
+            title="🐱 Here's your cat!",
             color=0xcc9923)
         embed.set_image(
-            url=cat["file"])
+            url=cat[0]['url'])
 
         await interaction.response.send_message(embed=embed)
 

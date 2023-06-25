@@ -4,18 +4,23 @@ from discord import app_commands
 from colorama import Back, Fore, Style
 from files import *
 import requests
+import ast
 import os
 from dotenv import load_dotenv
 load_dotenv()
 
+from cog_base import CogBase
 
-class utility(commands.Cog):
+
+class utility(CogBase, commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.Cog.listener()
-    async def on_ready(self):
-        print(Fore.LIGHTGREEN_EX + self.__class__.__name__ + Fore.RESET + " cog loaded")
+    """
+        @commands.Cog.listener()
+        async def on_ready(self):
+            print(Fore.LIGHTGREEN_EX + self.__class__.__name__ + Fore.RESET + " cog loaded")
+    """
 
     @app_commands.command(name="calculate", description="Mai'q knows math too!")
     @app_commands.describe(expression="Type HELP for a help message")
@@ -39,12 +44,20 @@ class utility(commands.Cog):
 3\*\*2 - 9
 26 \* (6 - 19)""",
                 inline=True)
-            await interaction.response.send_message(embed=embed)
-        else:
-            try:
-                await interaction.response.send_message(f"{expression} = {eval(expression)}")
-            except:
-                await interaction.response.send_message(f"Mai'q knows the answer to that too, but won't tell you.")
+            return await interaction.response.send_message(embed=embed)
+        
+        def is_valid(expression: str):
+            allowed_chars = set("0123456789.+-*/() ")
+            return all(char in allowed_chars for char in expression)
+
+        if not is_valid(expression):
+            return await interaction.response.send_message(f"Mai'q won't try to calculate that.")
+            
+        try:
+            await interaction.response.send_message(f"{expression} = {eval(expression)}")
+        except Exception as e:
+            await interaction.response.send_message(f"Your math is too wacky for Mai'q.")
+
 
     @app_commands.command(name="translate", description="Mai's knows many languages")
     @app_commands.describe(translate_from="Translate from", translate_to="Translate to",
