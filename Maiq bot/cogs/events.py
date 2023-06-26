@@ -33,7 +33,7 @@ class events(commands.Cog):
             await message.reply(random.choice(maiq_quotes))
             return
 
-    @tasks.loop(seconds=60)  # hello, this command could be improved and more accurate I think
+    @tasks.loop(seconds=60)  # this command could be improved and be more accurate I think
     async def papiez(self):
         channel = self.bot.get_channel(papiez_channel_id)  # insert your channel id instead
         ie_date = datetime.now(pytz.timezone('Eire'))
@@ -46,8 +46,8 @@ class events(commands.Cog):
     @tasks.loop(seconds=60)
     async def change_status(self):
         for activity in activity_list:
-            type, name = activity
-            await self.bot.change_presence(activity=discord.Activity(type=type, name=name))
+            typ, name = activity
+            await self.bot.change_presence(activity=discord.Activity(type=typ, name=name))
             await asyncio.sleep(60)
 
 async def setup(bot):
