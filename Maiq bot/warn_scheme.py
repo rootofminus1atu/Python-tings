@@ -38,6 +38,14 @@ class WarningsManager:
             self.collection.delete_one({"_id": warning_id})
             return f"Deleted warning with id `{warning_id}` for user {found_warning.user_name}"
         
+    def try_get_warning(self, warning_id, server_id):
+        try:
+            warning_id = ObjectId(warning_id)
+        except (InvalidId, TypeError):
+            return None
+        
+        found_warning = self.collection.find_one({"_id": warning_id, "server_id": str(server_id)})
+    
     def get_ttl(self):  # ttl = time to live
         """
         Retrieves the Time To Live (ttl) value in SECONDS.
