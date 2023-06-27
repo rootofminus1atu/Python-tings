@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 from bson.errors import InvalidId
@@ -16,7 +16,8 @@ class WarningsManager:
 
     def add_warning(self, warning):
         warning_data = warning.to_dict()
-        self.collection.insert_one(warning_data)
+        result = self.collection.insert_one(warning_data)
+        warning._id = result.inserted_id  # Update _id of the Warning object
 
     def get_warnings(self, user_id, server_id):
         query = {"user_id": str(user_id), "server_id": str(server_id)}
@@ -36,10 +37,23 @@ class WarningsManager:
         else:
             self.collection.delete_one({"_id": warning_id})
             return f"Deleted warning with id `{warning_id}`"
+        
+    def get_ttl(self):  # ttl = time to live
+        """
+        Retrieves the Time To Live (ttl) value in SECONDS.
+        """
+        default = timedelta(days=90)  # the default expiration time, DO NOT change it
+
+        indexes = self.collection.list_indexes()
+        for index in indexes:
+            if 'expireAfterSeconds' in index:
+                return index['expireAfterSeconds']
+        return default
 
 
 class Warning:
     def __init__(self, user_id, user_name, level, reason, mod_id, mod_name, server_id, server_name, created_at):
+        self._id = None  # Initialize _id as None by default
         self.user_id = str(user_id)
         self.user_name = str(user_name)
         self.level = int(level)
@@ -52,6 +66,7 @@ class Warning:
 
     def to_dict(self):
         return {
+            "_id": self._id,  # Include _id in the dictionary
             "user_id": self.user_id,
             "user_name": self.user_name,
             "level": self.level,
@@ -66,7 +81,7 @@ class Warning:
     @classmethod
     def from_dict(cls, data):
         created_at = datetime.fromisoformat(data["created_at"])
-        return cls(
+        warning = cls(
             data["user_id"],
             data["user_name"],
             data["level"],
@@ -77,6 +92,8 @@ class Warning:
             data["server_name"],
             created_at=created_at
         )
+        warning._id = data.get("_id")  # Set _id if present in the data
+        return warning
 
 class WarnLevel:
     def __init__(self, emoji, color, name):
@@ -109,14 +126,7 @@ warnings = db.warnings
 # currently this whole db thing is a mess
 # in the future I'd like to restructure all that into something more oop-like
 # and most (if not all) db related code could be kept in a separate file
-def get_ttl(collection):  # ttl = time to live
-    default = timedelta(days=90)  # the default expiration time, DO NOT change it
 
-    indexes = collection.list_indexes()
-    for index in indexes:
-        if 'expireAfterSeconds' in index:
-            return index['expireAfterSeconds']
-    return default
 
 def add_warn(user_id, reason, level, mod_id, server_id):
     rn = datetime.now()

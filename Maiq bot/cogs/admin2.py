@@ -10,8 +10,10 @@ load_dotenv()
 import inflect
 p = inflect.engine()
 
-
 from warn_scheme import Warning, WarningsManager, warn_levels
+
+def pretty_date(date):
+    return date.strftime(f"{p.ordinal(date.strftime('%d'))} %B %Y")
 
 class admin2(commands.Cog):
     def __init__(self, bot):
@@ -30,7 +32,8 @@ class admin2(commands.Cog):
         for key, val in warn_levels.items()
     ])
     async def warn(self, interaction: discord.Interaction, user: discord.User, level: app_commands.Choice[str], reason: str):
-        # await interaction.response.send_message(f"Warning `{user}` for `{reason}` with `{level} ({type(level)})` points.")
+        warn_level = warn_levels[int(level.value)]
+
         warning = Warning(
             user.id,
             user.name,
@@ -43,8 +46,7 @@ class admin2(commands.Cog):
             datetime.now()
         )
         print(warning.to_dict())
-
-        warn_level = warn_levels[warning.level]
+        self.warnings_manager.add_warning(warning)
 
         embed = discord.Embed(
             color=discord.Color(warn_level.color))
@@ -53,6 +55,7 @@ class admin2(commands.Cog):
             value=f"Reason: {reason}",
             inline=False)
         embed.add_field(
+            name="Warning dict",
             value=f"{warning.to_dict()}"
         )
 
@@ -64,10 +67,61 @@ class admin2(commands.Cog):
             await interaction.followup.send(f"Could not DM {user.mention}")
 
 
+    @app_commands.command(name="warnings", description="Check how many warnings a user has")
+    @app_commands.describe(user="Whose warnings do you want to see")
+    async def warnings(self, interaction: discord.Interaction, user: discord.User):
+        server = interaction.guild  # add if else check for dm thing
+        expiration_time = timedelta(seconds=self.warnings_manager.get_ttl())
+
+        def get_side_color(severity):
+            max_severity = list(warn_levels.keys())[-1]
+            
+            while severity not in warn_levels:
+                if severity > max_severity:
+                    return max_severity
+                severity += 1
+            
+            return severity
+        
+        all_warnings = self.warnings_manager.get_warnings(user.id, server.id)
+        severity = sum([warning.level for warning in all_warnings]) 
+        side_color = get_side_color(severity)
+
+        embed = discord.Embed(
+            color=discord.Color(warn_levels[side_color].color))
+        embed.set_author(
+            name=f"{len(all_warnings)} warnings for {user}",
+            icon_url=user.avatar.url)
+        embed.add_field(
+            name="Severity:",
+            value=f"{severity}/7",
+            inline=False)
+        for warning in all_warnings:
+            warning_date = warning.created_at  # fix this
+            date_str = pretty_date(warning_date)
+
+            exp_date = warning_date + expiration_time
+            exp_str = pretty_date(exp_date)
+
+            fat_discord_mod = await self.bot.fetch_user(warning.mod_id)
+
+            embed.add_field(
+                name=f"{warn_levels[warning.level].emoji} +{warning.level} | ID: {warning._id} | Moderator: {fat_discord_mod}",
+                value=f"Reason: {warning.reason}\nDate: {date_str}\nExpires: {exp_str}",
+                inline=False)
+
+        await interaction.response.send_message(embed=embed)
+
+
     @app_commands.command(name="delwarning", description="Remove a warning")
     @app_commands.describe(id="id of the warning you want to delete")
     async def delwarn2(self, interaction: discord.Interaction, id: str):
-        response = self.warnings_manager.try_delete_warning(id, interaction.guild.id)
+        server = interaction.guild
+
+        if server is None:
+            return await interaction.response.send_message("This command can only be used in a server.")
+        
+        response = self.warnings_manager.try_delete_warning(id, server.id)
         await interaction.response.send_message(response)
 
 
