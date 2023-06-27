@@ -36,7 +36,7 @@ class WarningsManager:
             return f"Warning with id `{warning_id}` not found."
         else:
             self.collection.delete_one({"_id": warning_id})
-            return f"Deleted warning with id `{warning_id}`"
+            return f"Deleted warning with id `{warning_id}` for user {found_warning.user_name}"
         
     def get_ttl(self):  # ttl = time to live
         """

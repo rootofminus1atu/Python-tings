@@ -11,6 +11,8 @@ import inflect
 p = inflect.engine()
 
 from warn_scheme import Warning, WarningsManager, warn_levels
+from errors import *
+from files import *
 
 def pretty_date(date):
     return date.strftime(f"{p.ordinal(date.strftime('%d'))} %B %Y")
@@ -25,6 +27,15 @@ class admin2(commands.Cog):
         print(Fore.LIGHTGREEN_EX + self.__class__.__name__ + Fore.RESET + " cog loaded")
 
 
+    @has_mod_or_roles(special_roles)
+    @app_commands.command(name="say", description="What will Mai'q speak? Where shall he speak?")
+    @app_commands.describe(text="What I'll say:", channel="Where I'll say it:")
+    async def say(self, interaction: discord.Interaction, text: str, channel: discord.TextChannel):
+        await channel.send(text)
+        await interaction.response.send_message("Mai'q spoke.", ephemeral=True)
+
+
+    @has_mod_or_roles(special_roles)
     @app_commands.command(name="warn", description="Warn someone")
     @app_commands.describe(user="Who are you warning", level="How severe the warning is", reason="Why are you warning them")
     @app_commands.choices(level=[
@@ -67,10 +78,14 @@ class admin2(commands.Cog):
             await interaction.followup.send(f"Could not DM {user.mention}")
 
 
+    @has_mod_or_roles(special_roles)
     @app_commands.command(name="warnings", description="Check how many warnings a user has")
     @app_commands.describe(user="Whose warnings do you want to see")
     async def warnings(self, interaction: discord.Interaction, user: discord.User):
         server = interaction.guild  # add if else check for dm thing
+        if server is None:
+            return await interaction.response.send_message("This command can only be used in a server.")
+        
         expiration_time = timedelta(seconds=self.warnings_manager.get_ttl())
 
         def get_side_color(severity):
@@ -90,7 +105,7 @@ class admin2(commands.Cog):
         embed = discord.Embed(
             color=discord.Color(warn_levels[side_color].color))
         embed.set_author(
-            name=f"{len(all_warnings)} warnings for {user}",
+            name=f"{len(all_warnings)} warnings for {user.display_name}",
             icon_url=user.avatar.url)
         embed.add_field(
             name="Severity:",
@@ -113,9 +128,10 @@ class admin2(commands.Cog):
         await interaction.response.send_message(embed=embed)
 
 
+    @has_mod_or_roles(special_roles)
     @app_commands.command(name="delwarning", description="Remove a warning")
     @app_commands.describe(id="id of the warning you want to delete")
-    async def delwarn2(self, interaction: discord.Interaction, id: str):
+    async def delwarn(self, interaction: discord.Interaction, id: str):
         server = interaction.guild
 
         if server is None:
