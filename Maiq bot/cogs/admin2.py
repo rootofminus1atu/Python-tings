@@ -99,13 +99,14 @@ class admin2(commands.Cog):
             return severity
         
         all_warnings = self.warnings_manager.get_warnings(user.id, server.id)
+        how_many = len(all_warnings)
         severity = sum([warning.level for warning in all_warnings]) 
         side_color = get_side_color(severity)
 
         embed = discord.Embed(
             color=discord.Color(warn_levels[side_color].color))
         embed.set_author(
-            name=f"{len(all_warnings)} warnings for {user.display_name}",
+            name=f"{how_many} warning{'' if how_many == 1 else 's'} for {user.display_name}",
             icon_url=user.avatar.url)
         embed.add_field(
             name="Severity:",
