@@ -138,8 +138,13 @@ class admin2(commands.Cog):
         if server is None:
             return await interaction.response.send_message("This command can only be used in a server.")
         
-        response = self.warnings_manager.try_delete_warning(id, server.id)
-        await interaction.response.send_message(response)
+        found_warning = self.warnings_manager.try_get_warning(id, server.id)
+
+        if found_warning is None:
+            return await interaction.response.send_message(f"Warning with id `{id}` not found.")
+
+        self.warnings_manager.delete_warning(found_warning)
+        await interaction.response.send_message("Deleted warning with id `{id}` for user {found_warning.user_name}")
 
 
 async def setup(bot):

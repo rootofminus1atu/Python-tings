@@ -44,7 +44,10 @@ class WarningsManager:
         except (InvalidId, TypeError):
             return None
         
-        found_warning = self.collection.find_one({"_id": warning_id, "server_id": str(server_id)})
+        return self.collection.find_one({"_id": warning_id, "server_id": str(server_id)})
+    
+    def delete_warning(self, warning):
+        self.collection.delete_one({"_id": warning._id})
     
     def get_ttl(self):  # ttl = time to live
         """
