@@ -70,10 +70,10 @@ class utility(CogBase, commands.Cog):
             await interaction.response.send_message(f"Mai'q knows many languages, but not those.")
             return
         if first not in lang_codes:
-            await interaction.response.send_message(f"Mai'q knows **{first}**, but won't use it to translate your message.")
+            await interaction.response.send_message(f"Mai'q knows many languages, but not **{first}**.")
             return
         if second not in lang_codes:
-            await interaction.response.send_message(f"Mai'q knows **{second}**, but won't use it to translate your message.")
+            await interaction.response.send_message(f"Mai'q knows many languages, but not **{second}**")
             return
 
         url = "https://translated-mymemory---translation-memory.p.rapidapi.com/get"

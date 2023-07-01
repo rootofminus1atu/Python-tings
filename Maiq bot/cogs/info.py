@@ -60,7 +60,6 @@ class info(commands.Cog):
     @app_commands.command(name="botinfo", description="Info about the bot")
     async def botinfo(self, interaction: discord.Interaction):
         bot_info = await self.bot.application_info()
-        owner = bot_info.owner
 
         embed = discord.Embed(
             title=f"{self.bot.user.name}",
@@ -70,7 +69,7 @@ class info(commands.Cog):
             url=f"{self.bot.user.avatar.url}")
         embed.add_field(
             name="Dev:",
-            value=f"{owner}",
+            value=f"{bot_info.owner}",
             inline=True)
         embed.add_field(
             name="Library:",
