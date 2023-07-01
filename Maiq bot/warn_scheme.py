@@ -76,8 +76,7 @@ class Warning:
         self.created_at = created_at
 
     def to_dict(self):
-        return {
-            "_id": self._id,  # Include _id in the dictionary
+        data = {
             "user_id": self.user_id,
             "user_name": self.user_name,
             "level": self.level,
@@ -88,6 +87,9 @@ class Warning:
             "server_name": self.server_name,
             "created_at": self.created_at.isoformat()
         }
+        if self._id:
+            data["_id"] = self._id
+        return data
 
     @classmethod
     def from_dict(cls, data):

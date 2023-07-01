@@ -27,8 +27,7 @@ async def on_ready():
         print(e)
 
 excluded_cogs = [
-    'admin',
-    'info'
+    'testing_grounds'
 ]
 
 async def load_cogs():

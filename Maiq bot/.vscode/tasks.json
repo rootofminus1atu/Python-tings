@@ -1,0 +1,19 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Run main.py",
+            "type": "shell",
+            "command": "${workspaceFolder}/venv/Scripts/python",
+            "args": ["${workspaceFolder}/main.py"],
+            "presentation": {
+            "reveal": "always",
+            "panel": "shared"
+            },
+            "group": {
+            "kind": "build",
+            "isDefault": true
+            }
+        }
+    ]
+}

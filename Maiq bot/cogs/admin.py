@@ -1,112 +1,26 @@
 import discord
 from discord.ext import commands
 from discord import app_commands
-from discord import ui
 from colorama import Fore, Style
 from datetime import datetime, timedelta
-import os
 from dotenv import load_dotenv
 load_dotenv()
-import inflect
-p = inflect.engine()
 
-from pymongo import MongoClient
-from bson.objectid import ObjectId
-from bson.errors import InvalidId
-
+from warn_scheme import Warning, WarningsManager, warn_levels
 from errors import *
 from files import *
+from helpers import pretty_date
 
 
-
-
-
-
-
-
-
-CONNECTION_STRING = f"mongodb+srv://RootOfMinus1:{os.getenv('MANGO')}@cluster0.ccfbwh6.mongodb.net/?retryWrites=true&w=majority"
-client = MongoClient(CONNECTION_STRING)
-
-db = client.get_database('CatWithHorns')
-warnings = db.warnings
-
-class WarnLevel:
-    def __init__(self, emoji, color, name):
-        self.emoji = emoji
-        self.color = color
-        self.name = name
-
-warn_levels = {
-    0: WarnLevel("🔵", 0x55ACEE, "Verbal"),
-    1: WarnLevel("🟢", 0x78B159, "Normal"),
-    3: WarnLevel("🟡", 0xFDCB58, "Medium"),
-    5: WarnLevel("🟠", 0xF4900C, "Big"),
-    7: WarnLevel("🔴", 0xDD2E44, "Huge"),
-    10: WarnLevel("⚫", 0x000000, "nil")
-}
-
-# DB MANIPULATION HELPER FUNCTIONS
-# currently this whole db thing is a mess
-# in the future I'd like to restructure all that into something more oop-like
-# and most (if not all) db related code could be kept in a separate file
-def get_ttl(collection):  # ttl = time to live
-    default = timedelta(days=90)  # the default expiration time, DO NOT change it
-
-    indexes = collection.list_indexes()
-    for index in indexes:
-        if 'expireAfterSeconds' in index:
-            return index['expireAfterSeconds']
-    return default
-
-def add_warn(user_id, reason, level, mod_id, server_id):
-    rn = datetime.now()
-    warn_data = {
-        "user_id": str(user_id),
-        "mod_id": str(mod_id),
-        "server_id": str(server_id),
-        "warn_level": int(level),
-        "reason": str(reason),
-        "created_at": rn,
-    }
-    warnings.insert_one(warn_data)
-
-
-def get_warns(user_id, server_id):
-    results = warnings.find({"user_id": str(user_id), "server_id": str(server_id)})
-    return list(results)
-
-def get_all_warns(user_id):
-    results = warnings.find({"user_id": str(user_id)})
-    return list(results)
-
-
-
-
-
-
-
-class MyModal(ui.Modal, title="ok"):
-    name = ui.TextInput(
-        label="Name",
-        placeholder="name your goober",
-        style=discord.TextStyle.short)
-    description = ui.TextInput(
-        label="hi",
-        placeholder="idk what",
-        style=discord.TextStyle.short)
-
-    async def on_submit(self, interaction: discord.Interaction):
-        await interaction.response.send_message(f"{self.name}")
-
-
-class admin(commands.Cog):
+class admin2(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.warnings_manager = WarningsManager()
 
     @commands.Cog.listener()
     async def on_ready(self):
         print(Fore.LIGHTGREEN_EX + self.__class__.__name__ + Fore.RESET + " cog loaded")
+
 
     @has_mod_or_roles(special_roles)
     @app_commands.command(name="say", description="What will Mai'q speak? Where shall he speak?")
@@ -117,7 +31,6 @@ class admin(commands.Cog):
 
 
     @commands.command(aliases=['close', 'kill'])
-    # @commands.has_permissions(administrator=True)  # how error handling
     async def shutdown(self, ctx):
         if ctx.author.guild_permissions.administrator:
             now = datetime.now()
@@ -129,71 +42,41 @@ class admin(commands.Cog):
         else:
             await ctx.send("Mai'q will not listen to you.")
 
-    @app_commands.command(name="modal")
-    async def modal(self, interaction: discord.Interaction):
-        await interaction.response.send_modal(MyModal())
-
-    @has_mod_or_roles(special_roles)
-    @app_commands.command(name="warnings", description="Check how many warnings a user has")
-    @app_commands.describe(user="The user")
-    async def warnings(self, interaction: discord.Interaction, user: discord.User):
-        server = interaction.guild
-        warns = get_warns(user.id, server.id)
-
-        expiration_time = timedelta(seconds=get_ttl(warnings))
-
-        severity = sum([int(warn['warn_level']) for warn in warns])
-
-        side_col = severity
-        while side_col not in warn_levels:
-            if side_col > 10:
-                side_col = 10
-                break
-            side_col += 1
-
-        embed = discord.Embed(
-            color=discord.Color(warn_levels[side_col].color))
-        embed.set_author(
-            name=f"{len(warns)} warnings for {user}",
-            icon_url=user.avatar.url)
-        embed.add_field(
-            name="Severity:",
-            value=f"{severity}/7",
-            inline=False)
-        for warn in warns:
-            warn_date = warn['created_at']
-            date_str = f"""{warn_date.strftime(f'{p.ordinal(warn_date.strftime("%d"))} %B %Y')}"""
-
-            exp_date = warn_date + expiration_time
-            exp_str = f"""{exp_date.strftime(f'{p.ordinal(exp_date.strftime("%d"))} %B %Y')}"""
-
-            fat_discord_mod = await self.bot.fetch_user(int(warn['mod_id']))
-
-            embed.add_field(
-                name=f"{warn_levels[warn['warn_level']].emoji} +{warn['warn_level']} | ID: {warn['_id']} | Moderator: {fat_discord_mod}",
-                value=f"Reason: {warn['reason']}\nDate: {date_str}\nExpires: {exp_str}",
-                inline=False)
-
-        await interaction.response.send_message(embed=embed)
 
     @has_mod_or_roles(special_roles)
     @app_commands.command(name="warn", description="Warn someone")
-    @app_commands.describe(user="The user", level="How severe the warn is", reason="What reason")
+    @app_commands.describe(user="Who are you warning", level="How severe the warning is", reason="Why are you warning them")
     @app_commands.choices(level=[
-        app_commands.Choice(name=f"{value.emoji} {value.name} = {key} points", value=f"{key}")
-        for key, value in warn_levels.items()
+        app_commands.Choice(name=f"{val.emoji} {val.name} = {key} points", value=f"{key}")
+        for key, val in warn_levels.items()
     ])
     async def warn(self, interaction: discord.Interaction, user: discord.User, level: app_commands.Choice[str], reason: str):
-        add_warn(user.id, reason, level.value, interaction.user.id, interaction.guild.id)
+        warn_level = warn_levels[int(level.value)]
 
-        lvl = warn_levels[int(level.value)]
+        warning = Warning(
+            user.id,
+            user.name,
+            level.value,
+            reason,
+            interaction.user.id,
+            interaction.user.name,
+            interaction.guild.id,
+            interaction.guild.name,
+            datetime.now()
+        )
+        # print(warning.to_dict())
+        self.warnings_manager.add_warning(warning)
 
         embed = discord.Embed(
-            color=discord.Color(lvl.color))
+            color=discord.Color(warn_level.color))
         embed.add_field(
-            name=f"{user} has received a {lvl.emoji} {lvl.name} {lvl.emoji} warning.",
+            name=f"{user} has received a {warn_level.emoji} {warn_level.name} {warn_level.emoji} warning.",
             value=f"Reason: {reason}",
             inline=False)
+        """embed.add_field(
+            name="Warning dict",
+            value=f"{warning.to_dict()}"
+        )"""
 
         await interaction.response.send_message(embed=embed)
 
@@ -202,44 +85,75 @@ class admin(commands.Cog):
         except (discord.Forbidden, discord.HTTPException, AttributeError):
             await interaction.followup.send(f"Could not DM {user.mention}")
 
+
     @has_mod_or_roles(special_roles)
-    @app_commands.command(name="delwarn", description="Remove a warning")
+    @app_commands.command(name="warnings", description="Check how many warnings a user has")
+    @app_commands.describe(user="Whose warnings do you want to see")
+    async def warnings(self, interaction: discord.Interaction, user: discord.User):
+        server = interaction.guild  # add if else check for dm thing
+        if server is None:
+            return await interaction.response.send_message("This command can only be used in a server.")
+        
+        expiration_time = timedelta(seconds=self.warnings_manager.get_ttl())
+
+        def get_side_color(severity):
+            max_severity = list(warn_levels.keys())[-1]
+            
+            while severity not in warn_levels:
+                if severity > max_severity:
+                    return max_severity
+                severity += 1
+            
+            return severity
+        
+        all_warnings = self.warnings_manager.get_warnings(user.id, server.id)
+        how_many = len(all_warnings)
+        severity = sum([warning.level for warning in all_warnings]) 
+        side_color = get_side_color(severity)
+
+        embed = discord.Embed(
+            color=discord.Color(warn_levels[side_color].color))
+        embed.set_author(
+            name=f"{how_many} warning{'' if how_many == 1 else 's'} for {user.display_name}",
+            icon_url=user.avatar.url)
+        embed.add_field(
+            name="Severity:",
+            value=f"{severity}/7",
+            inline=False)
+        for warning in all_warnings:
+            warning_date = warning.created_at  # fix this
+            date_str = pretty_date(warning_date)
+
+            exp_date = warning_date + expiration_time
+            exp_str = pretty_date(exp_date)
+
+            fat_discord_mod = await self.bot.fetch_user(warning.mod_id)
+
+            embed.add_field(
+                name=f"{warn_levels[warning.level].emoji} +{warning.level} | ID: {warning._id} | Moderator: {fat_discord_mod}",
+                value=f"Reason: {warning.reason}\nDate: {date_str}\nExpires: {exp_str}",
+                inline=False)
+
+        await interaction.response.send_message(embed=embed)
+
+
+    @has_mod_or_roles(special_roles)
+    @app_commands.command(name="delwarning", description="Remove a warning")
     @app_commands.describe(id="id of the warning you want to delete")
     async def delwarn(self, interaction: discord.Interaction, id: str):
-        try:
-            object_id = ObjectId(id)
-        except (InvalidId, TypeError):
-            await interaction.response.send_message(f"Invalid warning id: {id}")
-            return
+        server = interaction.guild
 
-        warn = warnings.find_one({"_id": object_id, "server_id": str(interaction.guild.id)})
-        if warn is None:
-            await interaction.response.send_message(f"Warning with id {id} not found.")
-        else:
-            warnings.delete_one({"_id": object_id})
-            await interaction.response.send_message(f"Deleted warning with id {id}")
+        if server is None:
+            return await interaction.response.send_message("This command can only be used in a server.")
+        
+        found_warning = self.warnings_manager.try_get_warning(id, server.id)
 
+        if found_warning is None:
+            return await interaction.response.send_message(f"Warning with id `{id}` not found.")
 
-
-
-    @app_commands.command(name="test", description="are u mod")
-    @is_in_guild(1031977836849922108)
-    # @app_commands.check(is_mod)
-    async def test(self, interaction: discord.Interaction):
-        await interaction.response.send_message("you are a mod!")
-
-    @app_commands.command(name="hguild", description="are u mod")
-    async def guild(self, interaction: discord.Interaction):
-        guild = self.bot.get_guild(1031977836849922108)
-        await interaction.response.send_message(guild.name)
-
-
-
-
-
-
-
+        self.warnings_manager.delete_warning(found_warning)
+        await interaction.response.send_message("Deleted warning with id `{id}` for user {found_warning.user_name}")
 
 
 async def setup(bot):
-    await bot.add_cog(admin(bot))
+    await bot.add_cog(admin2(bot))

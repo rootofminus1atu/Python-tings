@@ -8,6 +8,8 @@ art_channel_list = [1072264994508525609]
 special_roles = [
     ("special", 1093218274264760320)
 ]
+co_owner_role_id = 1061762185971368019  # no co-owner role yet
+
 
 activity_list = [
     (discord.ActivityType.watching, "Mudcrabs"),
