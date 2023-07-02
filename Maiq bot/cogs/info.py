@@ -6,8 +6,9 @@ from colorama import Fore
 import inflect
 p = inflect.engine()
 
-from helpers import pretty_date
+from helpers import pretty_date, get_user_from_id
 from files import co_owner_role_id
+from bot_dev_scheme import BotDev
 
 class info(commands.Cog):
     def __init__(self, bot):
@@ -78,6 +79,38 @@ class info(commands.Cog):
         embed.set_footer(
             text=f"Creation date: {pretty_date(self.bot.user.created_at)}")
 
+        await interaction.response.send_message(embed=embed)
+
+    @app_commands.command(name="ourdevs", description="Get a list of the bot devs")
+    async def ourdevs(self, interaction: discord.Interaction):
+        # better fetch stuff here or in the BotDev class? idk
+        bot_info = await self.bot.application_info()
+        notables = BotDev.get_users()
+        print(notables)
+        devs = [await get_user_from_id(self.bot, user.id) for user in notables if user.dev]
+        devs_filtered = [dev.name for dev in devs if dev is not None]
+        testers = [await get_user_from_id(self.bot, user.id) for user in notables if user.tester]
+        testers_filtered = [tester.name for tester in testers if tester is not None]
+        print(devs)
+        print(testers)
+
+        embed = discord.Embed(
+            title="Our devs",
+            description="Here are the devs of this bot!",
+            color=discord.Color.blurple())
+        embed.add_field(
+            name="Owner:",
+            value=f"**{bot_info.owner}**",
+            inline=True)
+        embed.add_field(
+            name="Devs:",
+            value=", ".join(devs_filtered),
+            inline=True)
+        embed.add_field(
+            name="Testers:",
+            value=", ".join(testers_filtered),
+            inline=True)
+        
         await interaction.response.send_message(embed=embed)
 
 
