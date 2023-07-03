@@ -1,6 +1,6 @@
 import openpyxl
 from openpyxl import Workbook
-from openpyxl.styles import PatternFill
+from openpyxl.styles import PatternFill, Border, Side
 import inflect
 p = inflect.engine()
 
@@ -52,6 +52,12 @@ def unicolor_column2(sheet, column, start, end, width, color):
     sheet.column_dimensions[sheet.cell(row=1, column=column).column_letter].width = width
 
 
+def apply_color(cell, color):
+    fill = PatternFill(start_color=color, end_color=color, fill_type="solid")
+    cell.fill = fill
+
+
+
 def decision_space(sheet, r, c, count, col_prim, col_sec, users) -> int:
     """
     Returns the row number of the next empty row
@@ -62,11 +68,11 @@ def decision_space(sheet, r, c, count, col_prim, col_sec, users) -> int:
     sheet.cell(row=r, column=c).value = f"{p.ordinal(count)} Place Vote:"
     sheet.cell(row=r, column=c).fill = fill_prim
     sheet.cell(row=r, column=c+1).value = "Explain Why You're Voting This Song:"
-    sheet.cell(row=r, column=c+1).fill = fill_sec
+    sheet.cell(row=r, column=c+1).fill = fill_prim
 
     for k in range(len(users)):
         sheet.cell(row=r+1+k, column=c).value = f"{users[k]}'s Vote: "
-        sheet.cell(row=r+1+k, column=c).fill = fill_prim
+        sheet.cell(row=r+1+k, column=c).fill = fill_sec
         sheet.cell(row=r+1+k, column=c+1).value = "opinion"
         sheet.cell(row=r+1+k, column=c+1).fill = fill_sec
 

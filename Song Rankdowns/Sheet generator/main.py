@@ -44,14 +44,15 @@ sheet.column_dimensions['B'].width = 5"""
 
 
 
-songs = ["hotline bling", "woohoo", "vacation", "bruja", "bruja", "bruja", "bruja", "bruja", "bruja", "bruja", "bruja", "bruja", "bruja", "anaconda", "MASS OF THE FERMENTING DERGS"]
+songs = ["hotline bling", "woohoo", "vacation", "bruja", "bruja", "bruja", "bruja", "bruja", "bruja", "bruja", "bruja", "bruja", "bruja", "bruja", "bruja", "bruja", "bruja", "bruja", "bruja", "anaconda", "MASS OF THE FERMENTING DERGS"]
 users = ["joe", "jane", "sasha velour"]
 nominations_num = 6
 
 general_colors = ['red', 'orange', 'yellow','green']
 top3_colors = ['bronze', 'silver', 'gold']
-
 color_ranges = get_color_ranges(len(songs) - 3, general_colors) + top3_colors
+
+max_black = 500  # will be replaced in the future
 
 colors_guide = {
     "red": {
@@ -81,6 +82,18 @@ colors_guide = {
     "gold": {
         "primary": "BF9000",
         "secondary": "F1C232"
+    },
+    "header_blue": {
+        "primary": "4A86E8",
+        "secondary": "4A86E8"
+    },
+    "black": {
+        "primary": "000000",
+        "secondary": "000000"
+    },
+    "gray": {
+        "primary": "808080",
+        "secondary": "808080"
     }
 }
 
@@ -104,23 +117,19 @@ def scoreboard(sheet, songs, color_ranges):
     E = 5
 
     sheet.cell(row=1, column=D).value = "Place:"
+    apply_color(sheet.cell(row=1, column=D), colors_guide["header_blue"]["primary"])
     sheet.cell(row=1, column=E).value = "Score:"
+    apply_color(sheet.cell(row=1, column=E), colors_guide["header_blue"]["primary"])
 
     # D for place
     for i in range(len(songs)):
         sheet.cell(row=i+2, column=D).value = p.ordinal(len(songs) - i)
-
-        color = colors_guide[color_ranges[i]]["primary"]
-        fill = PatternFill(start_color=color, end_color=color, fill_type="solid")
-        sheet.cell(row=i+2, column=D).fill = fill
+        apply_color(sheet.cell(row=i+2, column=D), colors_guide[color_ranges[i]]["primary"])
 
     # E for songs
     for i in range(len(songs)):
         sheet.cell(row=i+2, column=E).value = ""
-
-        color = colors_guide[color_ranges[i]]["secondary"]
-        fill = PatternFill(start_color=color, end_color=color, fill_type="solid")
-        sheet.cell(row=i+2, column=E).fill = fill
+        apply_color(sheet.cell(row=i+2, column=E), colors_guide[color_ranges[i]]["secondary"])
 
 scoreboard(sheet, songs, color_ranges)
 
@@ -131,7 +140,7 @@ unicolor_column2(sheet, column=6, start=0, end=len(songs)+1, width=3, color="000
 
 
 # next... nominations, hell
-
+# I'll definitely have to refactor this later
 def nominations(sheet, songs, users):
     # starting from G column (7th column)
     col = 7
@@ -152,10 +161,8 @@ def nominations(sheet, songs, users):
         after_noms_row = nominations_num + 2
 
         # important colors
-        color = colors_guide[general_colors[i]]["primary"]
-        decision_fill_prim = PatternFill(start_color=color, end_color=color, fill_type="solid")
-        color = colors_guide[general_colors[i]]["secondary"]
-        decision_fill_sec = PatternFill(start_color=color, end_color=color, fill_type="solid")
+        decision_color_prim = colors_guide[general_colors[i]]["primary"]
+        decision_color_sec = colors_guide[general_colors[i]]["secondary"]
 
 
 
@@ -176,27 +183,57 @@ def nominations(sheet, songs, users):
 
         # decisions
         how_many_colors = len([color for color in color_ranges if color == general_colors[i]])
-
-        
-
         for j in range(how_many_colors):
             new_row = after_noms_row + (len(users)+3)*j + 1
 
-            sheet.cell(row=new_row, column=first).value = f"{p.ordinal(counter)} Place Vote:"
-            sheet.cell(row=new_row, column=first).fill = decision_fill_prim
-            sheet.cell(row=new_row, column=second).value = "Explain Why You're Voting This Song:"
-            sheet.cell(row=new_row, column=second).fill = decision_fill_prim
+            free_row = decision_space(
+                sheet, 
+                new_row, 
+                first, 
+                counter, 
+                decision_color_prim, 
+                decision_color_sec, 
+                users)
+            
             counter -= 1
 
-            for k in range(len(users)):
-                sheet.cell(row=new_row+1+k, column=first).value = f"{users[k]}'s Vote: "
-                sheet.cell(row=new_row+1+k, column=first).fill = decision_fill_sec
-                sheet.cell(row=new_row+1+k, column=second).value = "opinion"
-                sheet.cell(row=new_row+1+k, column=second).fill = decision_fill_sec
+        # last column check for bronze silver gold
+        if counter == 3:
+            # bronze
+            free_row = decision_space(
+                sheet, 
+                free_row, 
+                first, 
+                counter, 
+                colors_guide["bronze"]["primary"], 
+                colors_guide["bronze"]["secondary"], 
+                users)
+            
+            counter -= 1
 
-            elem_row = new_row + len(users) + 1
-            sheet.cell(row=elem_row, column=first).value = "Eliminated Song: "
-            sheet.cell(row=elem_row+1, column=first).value = "EMPTY"
+            # silver
+            free_row = decision_space(
+                sheet, 
+                free_row, 
+                first, 
+                counter, 
+                colors_guide["silver"]["primary"], 
+                colors_guide["silver"]["secondary"], 
+                users)
+            
+            counter -= 1
+
+            # gold 
+            gold_color = colors_guide["gold"]["primary"]
+            gold_fill = PatternFill(start_color=gold_color, end_color=gold_color, fill_type="solid")
+
+            sheet.cell(row=free_row, column=first).value = "1st Place: "
+            sheet.cell(row=free_row, column=first).fill = gold_fill
+            sheet.cell(row=free_row, column=second).fill = gold_fill
+
+        # black border
+        unicolor_column2(sheet, column=last, start=0, end=max_black, width=3, color="000000")
+
 
     # add bronze, silver and gold
     for i in range(3):
@@ -209,8 +246,7 @@ def nominations(sheet, songs, users):
 
 
 
-# nominations(sheet, songs, users)
-decision_space(sheet, 7, 7, 3, colors_guide["yellow"]["primary"], colors_guide["yellow"]["secondary"], users)
+nominations(sheet, songs, users)
 
 
 # Save the workbook with the changes
