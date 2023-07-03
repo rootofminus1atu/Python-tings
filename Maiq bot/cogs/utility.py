@@ -60,8 +60,7 @@ class utility(CogBase, commands.Cog):
 
 
     @app_commands.command(name="translate", description="Mai's knows many languages")
-    @app_commands.describe(translate_from="Translate from", translate_to="Translate to",
-                           message="The message you wish to translate")
+    @app_commands.describe(translate_from="Translate from", translate_to="Translate to", message="The message you wish to translate")
     async def translate(self, interaction: discord.Interaction, translate_from: str, translate_to: str, message: str):
         first = translate_from.lower()
         second = translate_to.lower()

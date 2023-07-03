@@ -8,33 +8,68 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 from errors import *
+from pymongo import MongoClient
 
 
-bot = commands.Bot(command_prefix='!', intents=discord.Intents.all(), tree_cls=TreeWithErrors)
+CONNECTION_STRING = f"mongodb+srv://RootOfMinus1:{os.getenv('MANGO')}@cluster0.ccfbwh6.mongodb.net/?retryWrites=true&w=majority"
+class DbManager:
+    def __init__(self, connection_string):
+        self.client = MongoClient(connection_string)
+        self.db = self.client.get_database('CatWithHorns')
+        self.warnings_collection = self.db['warnings_v2']
+        self.birthdays_collection = self.db['birthdays']
 
-# todo:
-# improve admin only commands (and cog load/unload/reload commands)
-# error handler
+    def add_birthday(self, guild_id, name, day, month):
+        self.birthdays_collection.insert_one({
+            'guild_id': guild_id,
+            'name': name,
+            'day': day,
+            'month': month
+        })
+
+    def get_birthdays_for_date(self, day, month):
+        cursor = self.birthdays_collection.find({
+            'day': day,
+            'month': month
+        })
+        birthdays = list(cursor)
+        return birthdays
+    
+    def get_birthday_servers(self):
+        return self.birthdays_collection.distinct('guild_id')
 
 
-@bot.event
-async def on_ready():
-    print(f'{bot.user} has connected to Discord!')
-    try:
-        synced = await bot.tree.sync()
-        print(f"Synced {len(synced)} command(s)")
-    except Exception as e:
-        print(e)
+class MyBot(commands.Bot):
+    def __init__(self):
+        super().__init__(
+            command_prefix='!',
+            intents=discord.Intents.all(),
+            tree_cls=TreeWithErrors)
+        self.excluded_cogs = [
+            'purgatory',
+            'admin'
+        ]
+        self.db_manager = None
 
-excluded_cogs = [
-    'testing_grounds',
-    'admin'
-]
+    async def on_ready(self):
+        print(f'{self.user} has connected to Discord!')
+        try:
+            synced = await self.tree.sync()
+            print(f"Synced {len(synced)} command(s)")
+        except Exception as e:
+            print(e)
 
-async def load_cogs():
-    for file in os.listdir('./cogs'):
-        if file.endswith('.py') and file[:-3] not in excluded_cogs:
-            await bot.load_extension(f'cogs.{file[:-3]}')
+    async def setup_hook(self):
+        await self.load_cogs()
+        self.db_manager = DbManager(CONNECTION_STRING)
+
+    async def load_cogs(self):
+        for file in os.listdir('./cogs'):
+            if file.endswith('.py') and file[:-3] not in self.excluded_cogs:
+                await self.load_extension(f'cogs.{file[:-3]}')
+
+
+bot = MyBot()
 
 
 @bot.command()
@@ -99,5 +134,5 @@ async def on_tree_error(interaction: discord.Interaction, error: app_commands.Ap
 bot.tree.on_error = on_tree_error"""
 
 
-asyncio.run(load_cogs())
+# asyncio.run(load_cogs())
 bot.run(os.getenv('bot_key'))

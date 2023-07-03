@@ -18,6 +18,7 @@ class ping(commands.Cog):
 
     @app_commands.command()
     async def hello(self, interaction: discord.Interaction):
+        self.bot.db_manager.say_hi()
         await interaction.response.send_message("Greetings.")
 
     @commands.command()

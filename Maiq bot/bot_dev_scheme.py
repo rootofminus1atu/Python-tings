@@ -12,7 +12,7 @@ class BotDev:
     def get_users(cls):
         return [
             cls("gibbal", 698905167629647882, dev=True, tester=True),
-            cls("bruh", 9, dev=True, tester=True),
+            cls("bruh", 9, dev=True, tester=True),  # test case
             cls("neonz", 748576224435109899, dev=False, tester=True),
         ]  # is storing notable botdev users like this better than using a dict outside the class? idk
     

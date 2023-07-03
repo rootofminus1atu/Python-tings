@@ -12,7 +12,7 @@ from files import *
 from helpers import pretty_date
 
 
-class admin2(commands.Cog):
+class admin(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.warnings_manager = WarningsManager()
@@ -156,4 +156,4 @@ class admin2(commands.Cog):
 
 
 async def setup(bot):
-    await bot.add_cog(admin2(bot))
+    await bot.add_cog(admin(bot))
