@@ -29,7 +29,8 @@ def get_color_ranges(length, colors):
 
 
 def get_color_ranges_with_specials(length, colors, specials):
-    return get_color_ranges(length, colors) + specials
+    # add error handling for length < 3
+    return get_color_ranges(length - 3, colors) + specials
 
 
 def unicolor_column(sheet, column, how_long, width, color):
