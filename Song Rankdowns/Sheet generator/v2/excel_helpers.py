@@ -19,13 +19,14 @@ def apply_formatting(sheet, r, c, color=None, bold=False, italic=False, underlin
 
     # mix the color with the default gridline color
     # that way it looks like a google sheets grid
+    # just an idea
 
 
 def change_width(sheet, c, width):
     sheet.column_dimensions[sheet.cell(row=1, column=c).column_letter].width = width
 
 def song_list(sheet, r, c, songs):
-    change_width(sheet, c, 50)
+    change_width(sheet, c, size_guide["big"])
 
     sheet.cell(row=r, column=c).value = "List of Songs:"
     apply_formatting(sheet, r, c, color_guide["header_blue"]["primary"], bold=True)
@@ -37,8 +38,8 @@ def song_list(sheet, r, c, songs):
 def scoreboard(sheet, r, c, color_ranges):
     first = c
     second = c + 1
-    change_width(sheet, first, 6)
-    change_width(sheet, second, 50)
+    change_width(sheet, first, size_guide["small"])
+    change_width(sheet, second, size_guide["big"])
 
     sheet.cell(row=r, column=first).value = "Place:"
     apply_formatting(sheet, r, first, color_guide["header_blue"]["primary"], bold=True)
@@ -61,7 +62,7 @@ def decision_space(sheet, r, c, count, users, color_ranges):
 
     sheet.cell(row=r, column=c).value = f"{p.ordinal(count)} Place Vote: "
     apply_formatting(sheet, r, c, color_prim, bold=True, underline="single")
-    sheet.cell(row=r, column=c+1).value = "Explain Why:"
+    sheet.cell(row=r, column=c+1).value = "Explain Why You're Voting This Song: "
     apply_formatting(sheet, r, c+1, color_prim, bold=True, underline="single")
 
     for i, user in enumerate(users):
@@ -89,10 +90,19 @@ def winner(sheet, r, c, color_ranges):
     apply_formatting(sheet, r, c+1, color_guide[color_ranges[-1]]["primary"], bold=True)
 
 def black_border(sheet, c):
+    change_width(sheet, c, size_guide["tiny"])
+
     how_long = 200
     for i in range(1, how_long):
         apply_formatting(sheet, i, c, color_guide["black"]["primary"])
-        change_width(sheet, c, size_guide["tiny"])
+
+def gray_border(sheet, c):
+    change_width(sheet, c, size_guide["smaller"])
+
+    how_long = 200
+    for i in range(2, how_long):
+        apply_formatting(sheet, i, c, color_guide["gray"]["primary"])
+    apply_formatting(sheet, 1, c, color_guide["black"]["primary"])
 
 def showtime(sheet, r, c, general_colors, special_colors, color_ranges, users, how_many_noms):
     nom_dec_gap = 2
@@ -109,6 +119,8 @@ def showtime(sheet, r, c, general_colors, special_colors, color_ranges, users, h
 
 
     for row, col in nom_indexes:
+        change_width(sheet, col, size_guide["big"])
+        change_width(sheet, col+1, size_guide["huge"])
         nominated_songs(sheet, row, col, how_many_noms)
 
     counter = len(color_ranges)

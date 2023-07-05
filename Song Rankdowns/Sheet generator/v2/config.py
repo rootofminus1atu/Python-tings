@@ -1,8 +1,25 @@
 
 
 # change these
-songs = ["hotline bling", "woohoo", "vacation", "bruja", "bruja", "bruja", "bruja", "bruja", "bruja", "bruja", "bruja", "bruja", "bruja", "bruja", "bruja", "bruja", "bruja", "bruja", "bruja", "anaconda", "MASS OF THE FERMENTING DERGS"]
-users = ["joe", "jane", "sasha velour", "me", "you", "them"]
+songs = [
+    "Kanye West - Runaway",
+    "kero kero bonito - flamingo",
+    "Katamari Damacy - Lonely Rolling Star",
+    "Beyonce - Formation",
+    "Lizzo - Juice",
+    "Lady Gaga - Bad Romance",
+    "Hozier - Take Me To Church",
+    "Kendrick Lamar - Alright",
+    "Kendrick Lamar - King Kunta",
+    "Kendrick Lamar - DNA",
+    "Kendrick Lamar - Humble",
+    "Arca - Bruja",
+    "SOPHIE - Immaterial",
+    "Porter Robinson - Shelter",
+    "Yaeji - raingurl",
+    "Charli XCX - Vroom Vroom",
+]
+users = ["joe", "jane", "sasha velour", "sasha fierce", "sasha obama", "sasha grey"]
 nominations_num = 6
 
 
@@ -61,8 +78,9 @@ color_guide = {
 
 size_guide = {
     "tiny": 3,
-    "small": 6,
-    "medium": 12,  # it varies
-    "big": 40,
-    "huge": 80
+    "smaller": 4.5,
+    "small": 6.5,
+    "medium": 20,  # it varies
+    "big": 60,
+    "huge": 120
 }

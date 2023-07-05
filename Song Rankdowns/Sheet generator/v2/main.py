@@ -14,7 +14,7 @@ sheet = workbook.active
 
 color_ranges = get_color_ranges_with_specials(songs, general_colors, top3_colors)
 
-black_border(sheet, 1)
+gray_border(sheet, 1)
 song_list(
     sheet=sheet, 
     r=1, 
