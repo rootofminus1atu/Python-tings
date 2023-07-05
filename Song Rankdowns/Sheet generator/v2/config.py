@@ -18,6 +18,8 @@ songs = [
     "Porter Robinson - Shelter",
     "Yaeji - raingurl",
     "Charli XCX - Vroom Vroom",
+    "Grimes - Oblivion",
+    "Eminem - Rap God"
 ]
 users = ["joe", "jane", "sasha velour", "sasha fierce", "sasha obama", "sasha grey"]
 nominations_num = 6
