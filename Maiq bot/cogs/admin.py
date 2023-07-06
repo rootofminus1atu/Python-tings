@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from dotenv import load_dotenv
 load_dotenv()
 
-from warn_scheme import Warning, WarningsManager, warn_levels
+from db.warnings_manager import Warning, warn_levels
 from errors import *
 from files import *
 from helpers import pretty_date
@@ -15,7 +15,6 @@ from helpers import pretty_date
 class admin(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.warnings_manager = WarningsManager()
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -65,7 +64,7 @@ class admin(commands.Cog):
             datetime.now()
         )
         # print(warning.to_dict())
-        self.warnings_manager.add_warning(warning)
+        self.bot.db_manager.warnings_manager.add_warning(warning)
 
         embed = discord.Embed(
             color=discord.Color(warn_level.color))
@@ -94,7 +93,7 @@ class admin(commands.Cog):
         if server is None:
             return await interaction.response.send_message("This command can only be used in a server.")
         
-        expiration_time = timedelta(seconds=self.warnings_manager.get_ttl())
+        expiration_time = timedelta(seconds=self.bot.db_manager.warnings_manager.get_ttl())
 
         def get_side_color(severity):
             max_severity = list(warn_levels.keys())[-1]
@@ -106,7 +105,7 @@ class admin(commands.Cog):
             
             return severity
         
-        all_warnings = self.warnings_manager.get_warnings(user.id, server.id)
+        all_warnings = self.bot.db_manager.warnings_manager.get_warnings(user.id, server.id)
         how_many = len(all_warnings)
         severity = sum([warning.level for warning in all_warnings]) 
         side_color = get_side_color(severity)
@@ -146,13 +145,15 @@ class admin(commands.Cog):
         if server is None:
             return await interaction.response.send_message("This command can only be used in a server.")
         
-        found_warning = self.warnings_manager.try_get_warning(id, server.id)
+        found_warning = self.bot.db_manager.warnings_manager.try_get_warning(id, server.id)
 
         if found_warning is None:
             return await interaction.response.send_message(f"Warning with id `{id}` not found.")
+        
+        the_warning = Warning.from_dict(found_warning)
 
-        self.warnings_manager.delete_warning(found_warning)
-        await interaction.response.send_message("Deleted warning with id `{id}` for user {found_warning.user_name}")
+        self.bot.db_manager.warnings_manager.delete_warning(the_warning)
+        await interaction.response.send_message(f"Deleted warning with id `{id}` for user {the_warning.user_name}")
 
 
 async def setup(bot):

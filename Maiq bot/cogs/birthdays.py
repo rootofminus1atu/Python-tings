@@ -31,7 +31,7 @@ class birthdays(commands.Cog):
         if not server:
             return await interaction.response.send_message("Mai'q will not listen to you in dms. (Maybe in the future)")
             
-        self.bot.db_manager.add_birthday(server.id, person, day, month)
+        self.bot.db_manager.birthdays_manager.add_birthday(server.id, person, day, month)
 
         await interaction.response.send_message(f"Mai'q will now remember that {person}'s birthday is on {day}/{month}.")
         
@@ -43,17 +43,18 @@ class birthdays(commands.Cog):
         if not server:
             return await interaction.response.send_message("Mai'q will not listen to you in dms. (Maybe in the future)")
 
-        # self.bot.db_manager.set_birthday_channel(server.id, channel.id)
+        # self.bot.db_manager.birthdays_manager.set_birthday_channel(server.id, channel.id)
 
         await interaction.response.send_message(f"Mai'q will now remind you about birthdays in {channel.mention}.")
 
     @tasks.loop(seconds=60)
     async def bday_reminder(self):
+        return
         today = datetime.now(pytz.timezone('Eire'))
         channel = self.bot.get_channel(1031977836849922111)  # insert your channel id instead
         # in the future, loop through servers and get birthdays for each server
 
-        birthdays = self.bot.db_manager.get_birthdays_for_date(today.day, today.month)
+        birthdays = self.bot.db_manager.birthdays_manager.get_birthdays_for_date(today.day, today.month)
         print(birthdays)
 
         if not birthdays:

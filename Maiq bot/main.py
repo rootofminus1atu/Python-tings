@@ -1,43 +1,11 @@
 import discord
 from discord.ext import commands
 from discord import app_commands
-from discord.ui import Modal
-from discord.components import TextInput
-import asyncio
 import os
 from dotenv import load_dotenv
 load_dotenv()
 from errors import *
-from pymongo import MongoClient
-
-
-CONNECTION_STRING = f"mongodb+srv://RootOfMinus1:{os.getenv('MANGO')}@cluster0.ccfbwh6.mongodb.net/?retryWrites=true&w=majority"
-class DbManager:
-    def __init__(self, connection_string):
-        self.client = MongoClient(connection_string)
-        self.db = self.client.get_database('CatWithHorns')
-        self.warnings_collection = self.db['warnings_v2']
-        self.birthdays_collection = self.db['birthdays']
-
-    def add_birthday(self, guild_id, name, day, month):
-        self.birthdays_collection.insert_one({
-            'guild_id': guild_id,
-            'name': name,
-            'day': day,
-            'month': month
-        })
-
-    def get_birthdays_for_date(self, day, month):
-        cursor = self.birthdays_collection.find({
-            'day': day,
-            'month': month
-        })
-        birthdays = list(cursor)
-        return birthdays
-    
-    def get_birthday_servers(self):
-        return self.birthdays_collection.distinct('guild_id')
-
+from db.db_manager import DbManager
 
 class MyBot(commands.Bot):
     def __init__(self):
@@ -46,8 +14,7 @@ class MyBot(commands.Bot):
             intents=discord.Intents.all(),
             tree_cls=TreeWithErrors)
         self.excluded_cogs = [
-            'purgatory',
-            'admin'
+            'purgatory'
         ]
         self.db_manager = None
 
@@ -61,7 +28,7 @@ class MyBot(commands.Bot):
 
     async def setup_hook(self):
         await self.load_cogs()
-        self.db_manager = DbManager(CONNECTION_STRING)
+        self.db_manager = DbManager()
 
     async def load_cogs(self):
         for file in os.listdir('./cogs'):
