@@ -1,5 +1,7 @@
 import discord
 
+HOME_ID = 1031977836849922108
+
 gibbal_id = 698905167629647882
 papiez_channel_id = 1034863959964143666
 
@@ -9,6 +11,18 @@ special_roles = [
     ("special", 1093218274264760320)
 ]
 co_owner_role_id = 1061762185971368019  # no co-owner role yet
+
+
+automod_channel_id = 1076137834752254065
+# dangerous = BAD BUT NOT TERRIBLE
+dangerous_words = [
+    'perchance'
+]
+# prohibited = WORSE
+prohibited_words = [
+    'poaf3',
+    'ligma'
+]
 
 
 activity_list = [

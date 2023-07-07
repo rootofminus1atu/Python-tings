@@ -11,6 +11,7 @@ from helpers import pretty_day_month
 class birthdays(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.birthdays = self.bot.db_manager.birthdays_manager
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -31,7 +32,7 @@ class birthdays(commands.Cog):
         if not server:
             return await interaction.response.send_message("Mai'q will not listen to you in dms. (Maybe in the future)")
             
-        self.bot.db_manager.birthdays_manager.add_birthday(server.id, person, day, month)
+        self.birthdays.add_birthday(server.id, person, day, month)
 
         await interaction.response.send_message(f"Mai'q will now remember that {person}'s birthday is on {day}/{month}.")
         
@@ -43,7 +44,7 @@ class birthdays(commands.Cog):
         if not server:
             return await interaction.response.send_message("Mai'q will not listen to you in dms. (Maybe in the future)")
 
-        # self.bot.db_manager.birthdays_manager.set_birthday_channel(server.id, channel.id)
+        # self.birthdays.set_birthday_channel(server.id, channel.id)
 
         await interaction.response.send_message(f"Mai'q will now remind you about birthdays in {channel.mention}.")
 
@@ -54,7 +55,7 @@ class birthdays(commands.Cog):
         channel = self.bot.get_channel(1031977836849922111)  # insert your channel id instead
         # in the future, loop through servers and get birthdays for each server
 
-        birthdays = self.bot.db_manager.birthdays_manager.get_birthdays_for_date(today.day, today.month)
+        birthdays = self.birthdays.get_birthdays_for_date(today.day, today.month)
         print(birthdays)
 
         if not birthdays:

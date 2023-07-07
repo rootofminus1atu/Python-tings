@@ -6,7 +6,7 @@ from colorama import Fore
 import inflect
 p = inflect.engine()
 
-from helpers import pretty_date, get_or_fetch_user
+from helpers import pretty_date
 from files import co_owner_role_id
 from bot_dev_scheme import BotDev
 
@@ -87,9 +87,9 @@ class info(commands.Cog):
         bot_info = await self.bot.application_info()
         notables = BotDev.get_users()
         print(notables)
-        devs = [await get_or_fetch_user(self.bot, user.id) for user in notables if user.dev]
+        devs = [await self.bot.get_or_fetch_user(user.id) for user in notables if user.dev]
         devs_filtered = [dev.name for dev in devs if dev is not None]
-        testers = [await get_or_fetch_user(self.bot, user.id) for user in notables if user.tester]
+        testers = [await self.bot.get_or_fetch_user(user.id) for user in notables if user.tester]
         testers_filtered = [tester.name for tester in testers if tester is not None]
         print(devs)
         print(testers)

@@ -15,6 +15,7 @@ from helpers import pretty_date
 class admin(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.warnings = self.bot.db_manager.warnings_manager
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -42,7 +43,6 @@ class admin(commands.Cog):
             await ctx.send("Mai'q will not listen to you.")
 
 
-    @has_mod_or_roles(special_roles)
     @app_commands.command(name="warn", description="Warn someone")
     @app_commands.describe(user="Who are you warning", level="How severe the warning is", reason="Why are you warning them")
     @app_commands.choices(level=[
@@ -63,8 +63,7 @@ class admin(commands.Cog):
             interaction.guild.name,
             datetime.now()
         )
-        # print(warning.to_dict())
-        self.bot.db_manager.warnings_manager.add_warning(warning)
+        self.warnings.add_warning(warning)
 
         embed = discord.Embed(
             color=discord.Color(warn_level.color))
@@ -72,10 +71,6 @@ class admin(commands.Cog):
             name=f"{user} has received a {warn_level.emoji} {warn_level.name} {warn_level.emoji} warning.",
             value=f"Reason: {reason}",
             inline=False)
-        """embed.add_field(
-            name="Warning dict",
-            value=f"{warning.to_dict()}"
-        )"""
 
         await interaction.response.send_message(embed=embed)
 
@@ -85,29 +80,30 @@ class admin(commands.Cog):
             await interaction.followup.send(f"Could not DM {user.mention}")
 
 
-    @has_mod_or_roles(special_roles)
+
     @app_commands.command(name="warnings", description="Check how many warnings a user has")
     @app_commands.describe(user="Whose warnings do you want to see")
     async def warnings(self, interaction: discord.Interaction, user: discord.User):
-        server = interaction.guild  # add if else check for dm thing
+        server = interaction.guild
+
         if server is None:
             return await interaction.response.send_message("This command can only be used in a server.")
-        
-        expiration_time = timedelta(seconds=self.bot.db_manager.warnings_manager.get_ttl())
+
+        expiration_time = timedelta(seconds=self.warnings.get_ttl())
 
         def get_side_color(severity):
             max_severity = list(warn_levels.keys())[-1]
-            
+
             while severity not in warn_levels:
                 if severity > max_severity:
                     return max_severity
                 severity += 1
-            
+
             return severity
-        
-        all_warnings = self.bot.db_manager.warnings_manager.get_warnings(user.id, server.id)
+
+        all_warnings = self.warnings.get_warnings(user.id, server.id)
         how_many = len(all_warnings)
-        severity = sum([warning.level for warning in all_warnings]) 
+        severity = sum([warning.level for warning in all_warnings])
         side_color = get_side_color(severity)
 
         embed = discord.Embed(
@@ -120,13 +116,13 @@ class admin(commands.Cog):
             value=f"{severity}/7",
             inline=False)
         for warning in all_warnings:
-            warning_date = warning.created_at  # fix this
+            warning_date = warning.created_at
             date_str = pretty_date(warning_date)
 
             exp_date = warning_date + expiration_time
             exp_str = pretty_date(exp_date)
 
-            fat_discord_mod = await self.bot.fetch_user(warning.mod_id)
+            fat_discord_mod = await self.bot.get_or_fetch_user(warning.mod_id)
 
             embed.add_field(
                 name=f"{warn_levels[warning.level].emoji} +{warning.level} | ID: {warning._id} | Moderator: {fat_discord_mod}",
@@ -136,7 +132,6 @@ class admin(commands.Cog):
         await interaction.response.send_message(embed=embed)
 
 
-    @has_mod_or_roles(special_roles)
     @app_commands.command(name="delwarning", description="Remove a warning")
     @app_commands.describe(id="id of the warning you want to delete")
     async def delwarn(self, interaction: discord.Interaction, id: str):
@@ -144,17 +139,16 @@ class admin(commands.Cog):
 
         if server is None:
             return await interaction.response.send_message("This command can only be used in a server.")
-        
-        found_warning = self.bot.db_manager.warnings_manager.try_get_warning(id, server.id)
+
+        found_warning = self.warnings.try_get_warning(id, server.id)
 
         if found_warning is None:
             return await interaction.response.send_message(f"Warning with id `{id}` not found.")
-        
+
         the_warning = Warning.from_dict(found_warning)
 
-        self.bot.db_manager.warnings_manager.delete_warning(the_warning)
+        self.warnings.delete_warning(the_warning)
         await interaction.response.send_message(f"Deleted warning with id `{id}` for user {the_warning.user_name}")
-
 
 async def setup(bot):
     await bot.add_cog(admin(bot))

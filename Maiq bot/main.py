@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 from discord import app_commands
+from typing import Optional
 import os
 from dotenv import load_dotenv
 load_dotenv()
@@ -27,13 +28,26 @@ class MyBot(commands.Bot):
             print(e)
 
     async def setup_hook(self):
-        await self.load_cogs()
         self.db_manager = DbManager()
+        await self.load_cogs()
 
     async def load_cogs(self):
         for file in os.listdir('./cogs'):
             if file.endswith('.py') and file[:-3] not in self.excluded_cogs:
                 await self.load_extension(f'cogs.{file[:-3]}')
+
+    async def get_or_fetch_user(self, user_id: int) -> Optional[discord.User]:
+        try:
+            return self.get_user(user_id) or await self.fetch_user(user_id)
+        except discord.NotFound:
+            return None
+        
+    async def find_some_safe_chennel(self, guild: discord.Guild) -> Optional[discord.TextChannel]:
+        if guild.system_channel and guild.system_channel.permissions_for(guild.me).send_messages:
+            return guild.system_channel
+        elif guild.text_channels:
+            return guild.text_channels[0]
+        return None
 
 
 bot = MyBot()
