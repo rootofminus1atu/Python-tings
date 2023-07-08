@@ -44,6 +44,31 @@ class automod(commands.GroupCog, name="automod"):
         if message.author == self.bot.user:
             return
         
+
+        config = self.automod_manager.get_config(message.guild.id)
+
+        if config is None:
+            return
+        
+        if not config['enabled']:
+            return
+        
+        print(config)
+        
+        for word in config['dangerous_words']:
+            if word in message.content:
+                await self.handle_automod_situation(message, word, config['channel_id'], "DANGEROUS")
+                return
+            
+        for word in config['prohibited_words']:
+            if word in message.content:
+                await self.handle_automod_situation(message, word, config['channel_id'], "PROHIBITED")
+                return
+            
+        
+
+
+        """
         # automoding only in 1 server for now
         if message.guild is not None and message.guild.id == HOME_ID:
             for word in dangerous_words:
@@ -55,12 +80,19 @@ class automod(commands.GroupCog, name="automod"):
                 if word in message.content:
                     await self.handle_automod_situation(message, word, "PROHIBITED")
                     return
-            
-    async def handle_automod_situation(self, message: discord.Message, word: str, severity):
+        """ 
+
+    async def handle_automod_situation(self, message: discord.Message, word: str, channel_id: str, severity: str):
         occurrence = self.automod_manager.increment_record_and_get_count(message.guild.id, message.author.id)
 
-        channel = self.bot.get_channel(automod_channel_id)
-        await channel.send(embed=automod_embed(word, message, severity, occurrence))
+        # change this
+        # assume a safe channel and write "if you want to change it use this command"
+        try:
+            channel = self.bot.get_channel(int(channel_id))
+            await channel.send(embed=automod_embed(word, message, severity, occurrence))
+        except Exception as e:
+            print(e)
+            # dm error to server owner maybe idk
 
         if severity == "PROHIBITED":
             await message.delete()
@@ -91,18 +123,28 @@ class automod(commands.GroupCog, name="automod"):
         config = self.automod_manager.get_config(interaction.guild.id)
         dangerous_words = config['dangerous_words']
         prohibited_words = config['prohibited_words']
+        enabled = config['enabled']
 
-        await interaction.response.send_message(f"**Dangerous words:** {', '.join(dangerous_words)}\n**Prohibited words:** {', '.join(prohibited_words)}")
+        await interaction.response.send_message(f"**Dangerous words:** {', '.join(dangerous_words)}\n**Prohibited words:** {', '.join(prohibited_words)}\n**Status**: {'Enabled' if enabled else 'Disabled'}")
 
+    @app_commands.command(name="enable", description="Enable automod")
+    async def _enable(self, interaction: discord.Interaction):
+        status = self.automod_manager.update_config_enabled(interaction.guild.id, True)
 
+        if status is None:
+            await interaction.response.send_message("Automod has not been configured yet. Use /automod channel to set a channel for automod to send messages to")
 
-    @app_commands.command(name="ping", description="...")
-    async def _ping(self, interaction: discord.Interaction) -> None:
-        await interaction.response.send_message("pong!")
+        await interaction.response.send_message("Automod enabled, add words with /automod add_dangerous_word and /automod add_prohibited_word")
 
-    @app_commands.command(name="command", description="...")
-    async def _cmd(self, interaction: discord.Interaction) -> None:
-        await interaction.response.send_message("automodding time")
+    @app_commands.command(name="disable", description="Disable automod")
+    async def _disable(self, interaction: discord.Interaction):
+        status = self.automod_manager.update_config_enabled(interaction.guild.id, False)
+
+        if status is None:
+            await interaction.response.send_message("Automod has not been configured yet. Use /automod channel to set a channel for automod to send messages to")
+
+        await interaction.response.send_message("Automod disabled")
+
 
 
         

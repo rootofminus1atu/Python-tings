@@ -1,3 +1,5 @@
+from typing import Optional
+
 class AutomodManager:
     def __init__(self, db):
         self.tracker = db['automod_tracker']
@@ -41,7 +43,8 @@ class AutomodManager:
             'channel_id': channel_id,
             'channel_name': channel_name,
             'dangerous_words': [],
-            'prohibited_words': []
+            'prohibited_words': [],
+            'enabled': True,
         })
 
     def update_config_channel(self, server_id, server_name, channel_id, channel_name):
@@ -53,6 +56,16 @@ class AutomodManager:
             {'server_id': server_id},
             {'$set': {'channel_id': channel_id, 'channel_name': channel_name}}
         )
+
+    def update_config_enabled(self, server_id, enabled) -> Optional[bool]:
+        if self.get_config(server_id) is None:
+            return None
+        
+        self.config.update_one(
+            {'server_id': server_id},
+            {'$set': {'enabled': enabled}}
+        )
+        return enabled
 
     def add_dangerous_word(self, server_id, word):
         self.config.update_one(
