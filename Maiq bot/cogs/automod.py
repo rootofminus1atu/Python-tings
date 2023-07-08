@@ -133,7 +133,8 @@ class automod(commands.GroupCog, name="automod"):
 
         if status is None:
             await interaction.response.send_message("Automod has not been configured yet. Use /automod channel to set a channel for automod to send messages to")
-
+            return
+        
         await interaction.response.send_message("Automod enabled, add words with /automod add_dangerous_word and /automod add_prohibited_word")
 
     @app_commands.command(name="disable", description="Disable automod")
@@ -142,7 +143,8 @@ class automod(commands.GroupCog, name="automod"):
 
         if status is None:
             await interaction.response.send_message("Automod has not been configured yet. Use /automod channel to set a channel for automod to send messages to")
-
+            return
+        
         await interaction.response.send_message("Automod disabled")
 
 

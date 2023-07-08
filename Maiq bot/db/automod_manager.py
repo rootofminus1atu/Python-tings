@@ -57,10 +57,11 @@ class AutomodManager:
             {'$set': {'channel_id': channel_id, 'channel_name': channel_name}}
         )
 
-    def update_config_enabled(self, server_id, enabled) -> Optional[bool]:
+    def update_config_enabled(self, server_id: str, enabled: bool) -> Optional[bool]:
         if self.get_config(server_id) is None:
             return None
         
+        # maybe I should instead do result = self.config... and then return it
         self.config.update_one(
             {'server_id': server_id},
             {'$set': {'enabled': enabled}}
