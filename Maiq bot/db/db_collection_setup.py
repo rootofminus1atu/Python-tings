@@ -1,8 +1,4 @@
 from pymongo import MongoClient, ASCENDING, IndexModel
-from bson.objectid import ObjectId
-from datetime import datetime, timedelta
-import time
-from testing import *
 import os
 from dotenv import load_dotenv
 load_dotenv()

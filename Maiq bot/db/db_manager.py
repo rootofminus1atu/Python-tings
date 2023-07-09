@@ -7,6 +7,10 @@ from db.birthdays_manager import BirthdaysManager
 from db.warnings_manager import WarningsManager
 from db.automod_manager import AutomodManager
 
+# TODO:
+# turn this and all the other mongodb things into async
+# odm with mongoengine
+
 CONNECTION_STRING = f"mongodb+srv://RootOfMinus1:{os.getenv('MANGO')}@cluster0.ccfbwh6.mongodb.net/?retryWrites=true&w=majority"
 
 class DbManager:

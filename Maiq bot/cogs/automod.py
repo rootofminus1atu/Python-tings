@@ -43,7 +43,20 @@ class automod(commands.GroupCog, name="automod"):
     async def on_message(self, message):
         if message.author == self.bot.user:
             return
-        
+                    
+        """
+        # automoding only in 1 server for now
+        if message.guild is not None and message.guild.id == HOME_ID:
+            for word in dangerous_words:
+                if word in message.content:
+                    await self.handle_automod_situation(message, word, "DANGEROUS")
+                    return
+
+            for word in prohibited_words:
+                if word in message.content:
+                    await self.handle_automod_situation(message, word, "PROHIBITED")
+                    return
+        """ 
 
         config = self.automod_manager.get_config(message.guild.id)
 
@@ -64,23 +77,7 @@ class automod(commands.GroupCog, name="automod"):
             if word in message.content:
                 await self.handle_automod_situation(message, word, config['channel_id'], "PROHIBITED")
                 return
-            
-        
 
-
-        """
-        # automoding only in 1 server for now
-        if message.guild is not None and message.guild.id == HOME_ID:
-            for word in dangerous_words:
-                if word in message.content:
-                    await self.handle_automod_situation(message, word, "DANGEROUS")
-                    return
-
-            for word in prohibited_words:
-                if word in message.content:
-                    await self.handle_automod_situation(message, word, "PROHIBITED")
-                    return
-        """ 
 
     async def handle_automod_situation(self, message: discord.Message, word: str, channel_id: str, severity: str):
         occurrence = self.automod_manager.increment_record_and_get_count(message.guild.id, message.author.id)

@@ -1,5 +1,9 @@
 from typing import Optional
 
+# TODO:
+# turn this and all the other mongodb things into async
+# odm with mongoengine
+
 class AutomodManager:
     def __init__(self, db):
         self.tracker = db['automod_tracker']
