@@ -15,7 +15,8 @@ class MyBot(commands.Bot):
             intents=discord.Intents.all(),
             tree_cls=TreeWithErrors)
         self.excluded_cogs = [
-            'purgatory'
+            'purgatory',
+            'help'
         ]
         self.db_manager = None
 
