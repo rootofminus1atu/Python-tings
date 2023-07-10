@@ -9,7 +9,7 @@ A general all-purpose discord bot inspired by the Khajiit "Mai'q" from The Elder
 - An automod system. You can prohibit words 
 - Timed and schedules events (for example adding a heart reaction to a post in channel X).
 
-# To be added:
+# To be added
 - A birthday reminder system.
 - Music playing capabilities.
 - Making Mai'q talk with the help of chatgpt, instead of just keeping a list of example responses.
