@@ -1,5 +1,3 @@
-from typing import Optional
-import discord
 from discord.ext import commands
 import calendar
 import inflect
@@ -13,3 +11,5 @@ def pretty_day_month(day: int, month: int):
 
 def ordinal(n):
     return f"{p.ordinal(n)}"
+
+# discord colorama datetime python-dotenv pytz asyncio inflect requests Pillow pymongo

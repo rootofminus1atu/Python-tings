@@ -4,7 +4,6 @@ from discord import app_commands
 from colorama import Back, Fore, Style
 from files import *
 import requests
-import ast
 import os
 from dotenv import load_dotenv
 load_dotenv()

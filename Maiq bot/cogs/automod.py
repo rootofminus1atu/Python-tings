@@ -3,7 +3,6 @@ from discord.ext import commands
 from discord import app_commands
 from colorama import Fore
 from datetime import datetime
-from enum import Enum
 
 from files import prohibited_words, dangerous_words, automod_channel_id, HOME_ID
 from helpers import pretty_date, ordinal
