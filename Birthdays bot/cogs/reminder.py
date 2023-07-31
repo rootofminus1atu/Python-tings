@@ -5,13 +5,14 @@ from colorama import Back, Fore, Style
 import random
 from datetime import datetime
 import asyncio
+from managers import birthdays_manager
 
 
 class reminder(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.manager = birthdays_manager(bot)
         self.reminding.start()
-        self.already_reminded = False
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -20,10 +21,11 @@ class reminder(commands.Cog):
     def cog_unload(self):
         self.reminding.cancel()
 
-    @tasks.loop(seconds=60)
+    @tasks.loop(minutes=1)
     async def reminding(self):
         channel = self.bot.get_channel(1031977836849922111)
-        await channel.send("Hello there's a birthday today!")
+        await channel.send("test")
+
 
     @reminding.before_loop
     async def before_reminding(self):
