@@ -6,7 +6,7 @@ A general all-purpose discord bot inspired by the Khajiit "Mai'q" from The Elder
 - A bunch of fun commands like `/cat`, `/calculate`, `/translate` which do what you expect them to do.
 - Info commands that are generally fit for any server.
 - `/warn` commands for moderation purposes.
-- An automod system. You can prohibit words 
+- An automod system. You can prohibit words and if those words are detected in a user's message, the message will be deleted.
 - Timed and schedules events (for example adding a heart reaction to a post in channel X).
 
 # To be added
