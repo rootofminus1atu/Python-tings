@@ -24,7 +24,7 @@ class reminder(commands.Cog):
     @tasks.loop(minutes=1)
     async def reminding(self):
         channel = self.bot.get_channel(1031977836849922111)
-        await channel.send("test")
+        await channel.send("Hello there is a birthday today!")
 
 
     @reminding.before_loop

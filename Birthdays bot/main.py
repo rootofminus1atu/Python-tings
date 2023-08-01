@@ -32,7 +32,7 @@ class MyBot(commands.Bot):
             self.client = MongoClient(os.getenv('MONGO_URI'))
             print("Connected to MongoDB")
             self.db = self.client.get_database('CatWithHorns')
-            print("Connected to database " + Fore.LIGHTMAGENTA_EX + self.db.name + Fore.RESET)
+            print("Connected to database " + Fore.LIGHTMAGENTA_EX + "self.db.name" + Fore.RESET)
         except Exception as e:
             print(e)
 
@@ -41,6 +41,7 @@ class MyBot(commands.Bot):
     async def load_cogs(self):
         for file in os.listdir('./cogs'):
             if file.endswith('.py') and file[:-3] not in self.excluded_cogs:
+                print("Loading extension " + Fore.LIGHTYELLOW_EX + file[:-3] + Fore.RESET)
                 await self.load_extension(f'cogs.{file[:-3]}')
 
     async def get_or_fetch_user(self, user_id: int) -> Optional[discord.User]:

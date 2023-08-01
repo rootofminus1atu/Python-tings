@@ -18,8 +18,6 @@ class birthdays(commands.GroupCog, name="birthday"):
     @app_commands.command(name="add", description="add a birthday")
     @app_commands.describe(person="Whose birthday?", day="Which day?", month="Which month?")
     async def _add(self, interaction: discord.Interaction, person: str, day: int, month: int):
-        self.bot.manager.add_birthday()
-
         await interaction.response.send_message(f"Added {person}'s birthday on {day}/{month}.")
 
     @app_commands.command(name="upcoming", description="get upcoming birthdays")
