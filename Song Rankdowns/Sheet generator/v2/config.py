@@ -70,7 +70,7 @@ color_guide = {
     },
     "gray": {
         "primary": "808080",
-        "secondary": "808080"
+        "secondary": "D9D2E9"
     },
     "fake_grid": {
         "primary": "D4D4D4",
