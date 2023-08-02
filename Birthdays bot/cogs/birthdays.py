@@ -14,6 +14,9 @@ import pymongo
 # the second one only activates in None cases
 # which actually makes sense, I should keep that in mind
 
+# TODO:
+# - improve the _add command (into an embed, more info, add channel info)
+# - add birthday _update command
 
 class birthdays(commands.GroupCog, name="birthday"):
     def __init__(self, bot: commands.Bot) -> None:
@@ -95,12 +98,21 @@ class birthdays(commands.GroupCog, name="birthday"):
     @app_commands.command(name="channel", description="change the channel where birthdays are announced")
     @app_commands.describe(channel="The channel where birthdays are announced")
     async def _channel(self, interaction: discord.Interaction, channel: discord.TextChannel):
+        situation = self.bot.helpers.get_situation(interaction)
+        
+        if not interaction.guild:
+            await interaction.response.send_message("This command can only be used in servers.")
+            return
+        
+        self.bot.manager.update_config_channel(situation, channel)
         await interaction.response.send_message(f"Set birthdays channel to {channel.mention}")
+        
+
 
     @app_commands.command(name="time", description="change the time when birthdays are announced")
-    @app_commands.describe(time="The time when birthdays are announced", timezone="The timezone of the time")
+    @app_commands.describe(time="The time when birthdays are announced", timezone="The timezone")
     async def _time(self, interaction: discord.Interaction, time: str, timezone: str):
-        # change timezone to a choice menu
+        # changing the time and timezone in the db
         await interaction.response.send_message(f"Set birthdays time to {time} {timezone}")
 
 

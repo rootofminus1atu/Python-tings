@@ -60,6 +60,18 @@ class BirthdaysManager:
         else:
             return self.collection.find_one({"user_id": place.id, "birthdays": {"$elemMatch": {"person": person}}})
 
+    # or maybe using a few more classes would've been better
+    def update_config_channel(self, situation: SituationType, target_channel: discord.TextChannel):
+        place, channel = situation
+
+        if not channel:
+            return
+
+        self.collection.update_one({"server_id": place.id}, {"$set": {
+            "channel_id": target_channel.id,
+            "channel_name": target_channel.name
+        }})
+
     def add_birthday(self, situation: SituationType, birthday: dict):
         place, channel = situation
 
