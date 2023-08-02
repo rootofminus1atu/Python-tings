@@ -6,6 +6,14 @@ from datetime import datetime
 import calendar
 import pymongo
 
+# NOTE:
+# `if not birthdays`
+# `if birthdays is None`
+# those are actually different
+# the first one activates not only in None cases, but also in empty lists, empty dicts, empty strings, etc
+# the second one only activates in None cases
+# which actually makes sense, I should keep that in mind
+
 
 class birthdays(commands.GroupCog, name="birthday"):
     def __init__(self, bot: commands.Bot) -> None:
@@ -34,79 +42,55 @@ class birthdays(commands.GroupCog, name="birthday"):
             "month": month
         }
 
-        # either server
-        server = interaction.guild
-        channel = interaction.channel
-        # or dm
-        user = interaction.user
+        situation = self.bot.helpers.get_situation(interaction)
 
-        if server:
-            situation = server
-        else:
-            situation = user
+        # reminder:
+        # add cases for servers and dms, channel vs no channel
+        if not self.bot.manager.get_config(situation):
+            new_config = self.bot.manager.create_config(situation, and_birthday=birthday)
+            await interaction.response.send_message(f"Added {person}'s birthday on {day}/{month}. Configuration was created. Currently birthdays will be sent at 8am UTC. Change them using `/birthday channel` and `/birthday time`. (I might add a `/birthday mode` instead in the future)")
+            return
+        
+        if self.bot.manager.get_config_from_person_birthday(situation, person):
+            await interaction.response.send_message(f"{person}'s birthday already exists.")
+            return
+        
+        self.bot.manager.add_birthday(situation, birthday)
+        await interaction.response.send_message(f"Added {person}'s birthday on {day}/{month}. Await birthdays to be sent at 8am UTC. Change them using `/birthday channel` and `/birthday time`. (I might add a `/birthday mode` instead in the future)")
 
-        # check if server or dm
-        if server:
-            if not self.collection.find_one({"server_id": server.id}):
-                self.collection.insert_one({
-                    "server_id": server.id,
-                    "server_name": server.name,
-                    "channel_id": channel.id,
-                    "channel_name": channel.name,
-                    "time": "8:00",
-                    "timezone": "UTC",
-                    "birthdays": [birthday]
-                })
-                await interaction.response.send_message(f"Added {person}'s birthday on {day}/{month}.")
-                return
-            
-            # check if bday already exists
-            if self.collection.find_one({"server_id": server.id, "birthdays": {"$elemMatch": {"person": person}}}):
-                await interaction.response.send_message(f"{person}'s birthday already exists.")
-                return
-            
-            # add bday
-            self.collection.update_one({"server_id": server.id}, {"$push": {
-                "birthdays": {
-                    "person": person,
-                    "day": day,
-                    "month": month
-                }
-            }})
-            await interaction.response.send_message(f"Added {person}'s birthday on {day}/{month}.")
-            return
-        else:
-            config = self.collection.find_one({"user_id": user.id})
-            if not config:
-                self.collection.insert_one({
-                    "user_id": user.id,
-                    "user_name": user.name,
-                    "time": "8:00",
-                    "timezone": "UTC",
-                    "birthdays": [birthday]
-                })
-                await interaction.response.send_message(f"Added {person}'s birthday on {day}/{month}.")
-                return
-            
-            # check if bday already exists
-            if self.collection.find_one({"user_id": user.id, "birthdays": {"$elemMatch": {"person": person}}}):
-                await interaction.response.send_message(f"{person}'s birthday already exists.")
-                return
-            
-            # add bday
-            self.collection.update_one({"user_id": user.id}, {"$push": {
-                "birthdays": {
-                    "person": person,
-                    "day": day,
-                    "month": month
-                }
-            }})
-            await interaction.response.send_message(f"Added {person}'s birthday on {day}/{month}.")
-            return
 
     @app_commands.command(name="upcoming", description="get upcoming birthdays")
     async def _upcoming(self, interaction: discord.Interaction):
-        await interaction.response.send_message("showing 10 bdays")
+        situation = self.bot.helpers.get_situation(interaction)
+
+        birthdays = self.bot.manager.get_birthdays(situation)
+         
+        if not birthdays:
+            await interaction.response.send_message("There are no birthdays.")
+            return
+    
+        embed = discord.Embed(
+            title="Upcoming birthdays", 
+            description="\n".join([f"{birthday['person']} - {birthday['day']}/{birthday['month']}" for birthday in birthdays[:10]]),
+            color=discord.Color.random())
+
+        await interaction.response.send_message(embed=embed)
+
+    @app_commands.command(name="remove", description="remove a birthday")
+    @app_commands.describe(person="Whose birthday?")
+    async def _remove(self, interaction: discord.Interaction, person: str):
+        situation = self.bot.helpers.get_situation(interaction)
+
+        if not self.bot.manager.get_config(situation):
+            await interaction.response.send_message("There are no birthdays.")
+            return
+
+        if not self.bot.manager.get_birthday_from_person(situation, person):
+            await interaction.response.send_message(f"{person}'s birthday doesn't exist.")
+            return
+
+        self.bot.manager.remove_birthday(situation, person)
+        await interaction.response.send_message(f"Removed {person}'s birthday.")
 
     @app_commands.command(name="channel", description="change the channel where birthdays are announced")
     @app_commands.describe(channel="The channel where birthdays are announced")

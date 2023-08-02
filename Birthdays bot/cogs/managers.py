@@ -1,95 +1,121 @@
 import discord
 from discord.ext import commands
 from colorama import Fore
-from typing import Optional
+from typing import Optional, Tuple, Union
+from pymongo import ASCENDING
 
 DEFAULT_TIME = 8
 DEFAULT_TIMEZONE = "UTC"
 # UTC contains countries like England, Portugal, Ghana, Morocco, Iceland, etc.
 
+SituationType = Tuple[Union[discord.Guild, discord.User], Optional[discord.TextChannel]]
 
-class birthdays_manager:
+class BirthdaysManager:
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.collection = self.bot.db['serious_birthdays_config']
 
-    def create_config_server(self, server: discord.Guild, channel: discord.TextChannel, time=DEFAULT_TIME, timezone=DEFAULT_TIMEZONE):
-        self.collection.insert_one({
-            "server_id": server.id,
-            "server_name": server.name,
-            "channel_id": channel.id,
-            "channel_name": channel.name,
-            "time": time,
-            "timezone": timezone,
-            "birthdays": [] 
-        })
+    def create_config(self, situation: SituationType, and_birthday=None, time=DEFAULT_TIME, timezone=DEFAULT_TIMEZONE):
+        place, channel = situation
 
-    def get_config_server(self, server: discord.Guild) -> Optional[dict]:
-        return self.collection.find_one({"server_id": server.id})
-    
-    def update_config_server(self, server: discord.Guild, channel: discord.TextChannel, time=DEFAULT_TIME, timezone=DEFAULT_TIMEZONE):
-        if not self.get_config_server(server):
-            self.create_config_server(server, channel, time, timezone)
-            return
-
-        self.collection.update_one({"server_id": server.id}, {"$set": {
-            "channel_id": channel.id,
-            "channel_name": channel.name,
-            "time": time,
-            "timezone": timezone
-        }})
-
-    def create_config_dm(self, user: discord.User, time=DEFAULT_TIME, timezone=DEFAULT_TIMEZONE):
-        self.collection.insert_one({
-            "user_id": user.id,
-            "user_name": user.name,
+        # if channel === if we're in a server
+        if channel:
+            config = {
+                "server_id": place.id,
+                "server_name": place.name,
+                "channel_id": channel.id,
+                "channel_name": channel.name
+            }
+        else:
+            config = {
+                "user_id": place.id,
+                "user_name": place.name
+            }
+        
+        config.update({
             "time": time,
             "timezone": timezone,
             "birthdays": []
         })
 
-    def get_config_dm(self, user: discord.User) -> Optional[dict]:
-        return self.collection.find_one({"user_id": user.id})
+        if and_birthday:
+            config["birthdays"].append(and_birthday)
+
+        self.collection.insert_one(config)
+        return config
+
+    def get_config(self, situation: SituationType) -> Optional[dict]:
+        place, channel = situation
+
+        if channel:
+            return self.collection.find_one({"server_id": place.id})
+        else:
+            return self.collection.find_one({"user_id": place.id})
+
+    def get_config_from_person_birthday(self, situation: SituationType, person: str) -> Optional[dict]:
+        place, channel = situation
+
+        if channel:
+            return self.collection.find_one({"server_id": place.id, "birthdays": {"$elemMatch": {"person": person}}})
+        else:
+            return self.collection.find_one({"user_id": place.id, "birthdays": {"$elemMatch": {"person": person}}})
+
+    def add_birthday(self, situation: SituationType, birthday: dict):
+        place, channel = situation
+
+        if channel:
+            self.collection.update_one({"server_id": place.id}, {"$push": {"birthdays": birthday}})
+        else:
+            self.collection.update_one({"user_id": place.id}, {"$push": {"birthdays": birthday}})
     
-    def update_config_dm(self, user: discord.User, time=DEFAULT_TIME, timezone=DEFAULT_TIMEZONE):
-        if not self.get_config_dm(user):
-            self.create_config_dm(user, time, timezone)
-            return
+    def get_birthdays(self, situation: SituationType) -> Optional[list]:
+        config = self.get_config(situation)
 
-        self.collection.update_one({"user_id": user.id}, {"$set": {
-            "time": time,
-            "timezone": timezone
-        }})
+        if not config:
+            return None
+        
+        birthdays = config["birthdays"]
 
-    def add_birthday_server(self, server: discord.Guild, day, month, person):
-        if not self.get_config_server(server):
-            self.create_config_server(server)
+        sorted_birthdays = sorted(birthdays, key=lambda bday: (bday["month"], bday["day"]))
 
-            self.insert_one({
-                "server_id": server.id,
-                "server_name": server.name,
+        return sorted_birthdays
+    
+    def get_birthday_from_person(self, situation: SituationType, person: str) -> Optional[list]:
+        config = self.get_config(situation)
 
-            })
+        if not config:
+            return None
+        
+        birthdays = config["birthdays"]
 
-        self.collection.update_one({"server_id": server.id}, {"$push": {
-            "birthdays": {
-                "day": day,
-                "month": month,
-                "person": person
-            }
-        }})
+        for birthday in birthdays:
+            if birthday["person"] == person:
+                return birthday
+        
+        return None
+    
+    def remove_birthday(self, situation: SituationType, person: str):
+        place, channel = situation
 
-    def add_birthday_dm(self, user: discord.User, day, month, person):
-        if not self.get_config_dm(user):
-            self.create_config_dm(user)
+        if channel:
+            self.collection.update_one({"server_id": place.id}, {"$pull": {"birthdays": {"person": person}}})
+        else:
+            self.collection.update_one({"user_id": place.id}, {"$pull": {"birthdays": {"person": person}}})
 
-        self.collection.update_one({"user_id": user.id}, {"$push": {
-            "birthdays": {
-                "day": day,
-                "month": month,
-                "person": person
-            }
-        }})
+
+class Helpers:
+    def get_situation(self, interaction: discord.Interaction):
+        # either server
+        server = interaction.guild
+        channel = interaction.channel
+        # or dm
+        user = interaction.user
+
+        if server:
+            return (server, channel)
+        else:
+            return (user, None)
 
 async def setup(bot):
-    bot.manager = birthdays_manager(bot)
+    bot.manager = BirthdaysManager(bot)
+    bot.helpers = Helpers()
