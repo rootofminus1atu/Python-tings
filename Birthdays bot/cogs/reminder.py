@@ -5,13 +5,11 @@ from colorama import Back, Fore, Style
 import random
 from datetime import datetime
 import asyncio
-from managers import birthdays_manager
 
 
 class reminder(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.manager = birthdays_manager(bot)
         self.reminding.start()
 
     @commands.Cog.listener()

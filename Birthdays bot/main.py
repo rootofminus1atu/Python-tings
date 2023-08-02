@@ -85,7 +85,7 @@ async def reload(ctx, cog):
 
 @bot.command()
 async def sync(ctx):
-    print("sync command")
+    print("Syncing command")
     try: 
         synced = await bot.tree.sync()
         print(f"Synced {len(synced)} command(s)")
