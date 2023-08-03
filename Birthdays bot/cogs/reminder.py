@@ -35,7 +35,7 @@ class reminder(commands.Cog):
 
     full_hours = [time(hour=hour, minute=0) for hour in range(24)]
 
-    @tasks.loop(time=another)
+    @tasks.loop(time=full_hours)
     async def reminding(self):
         await asyncio.sleep(1)  # sleep for 1 sec because discord updates hours too slowly for this
         channel = self.bot.get_channel(1031977836849922111)
