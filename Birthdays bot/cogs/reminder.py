@@ -6,6 +6,10 @@ import random
 from datetime import datetime, time
 import asyncio
 import pytz
+from zoneinfo import ZoneInfo
+import tzdata
+
+another = time(hour=22, minute=53, tzinfo=ZoneInfo('Europe/Warsaw'))
 
 
 class reminder(commands.Cog):
@@ -31,14 +35,17 @@ class reminder(commands.Cog):
 
     full_hours = [time(hour=hour, minute=0) for hour in range(24)]
 
-    @tasks.loop(time=full_hours)
+    @tasks.loop(time=another)
     async def reminding(self):
-        asyncio.sleep(1)  # sleep for 1 sec because discord updates hours too slowly for this
+        await asyncio.sleep(1)  # sleep for 1 sec because discord updates hours too slowly for this
         channel = self.bot.get_channel(1031977836849922111)
         print(datetime.now().time())
         await channel.send("FULL HOUR TEST")
 
         now = datetime.utcnow().time()
+        print(now)
+
+
         # find configs with the time set to now
 
 
@@ -50,6 +57,10 @@ class reminder(commands.Cog):
 
     @commands.command(name="hour")
     async def hour(self, ctx):
+        print("hi")
+        another = time(hour=22, minute=50, tzinfo=ZoneInfo('Europe/Warsaw'))
+        print(another)
+        print(another.tzinfo)
         await ctx.send(f"Time rn: {datetime.now()} vs utc {datetime.utcnow()} vs pytz utc {datetime.now(pytz.utc)}")
 
     """
