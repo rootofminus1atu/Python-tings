@@ -5,6 +5,7 @@ from colorama import Back, Fore, Style
 import random
 from datetime import datetime, time
 import asyncio
+import pytz
 
 
 class reminder(commands.Cog):
@@ -22,20 +23,34 @@ class reminder(commands.Cog):
         self.reminding.cancel()
         self.LOOPTESTING.cancel()
 
-    @tasks.loop(seconds=1)
+    @tasks.loop(seconds=100)
     async def LOOPTESTING(self):
         # channel = self.bot.get_channel(1031977836849922111)
         print(f"Time rn: {datetime.now().time()}")
+        print(f"Time utc rn: {datetime.utcnow().time()}")
 
     full_hours = [time(hour=hour, minute=0) for hour in range(24)]
 
-    @tasks.loop(time=self.full_hours)
+    @tasks.loop(time=full_hours)
     async def reminding(self):
         asyncio.sleep(1)  # sleep for 1 sec because discord updates hours too slowly for this
-        print(self.full_hours)
         channel = self.bot.get_channel(1031977836849922111)
         print(datetime.now().time())
         await channel.send("FULL HOUR TEST")
+
+        now = datetime.utcnow().time()
+        # find configs with the time set to now
+
+
+    @commands.command(name="test")
+    async def test(self, ctx, hour: int):
+        # for now only Europe/Warsaw
+        self.bot.testing.create_time(hour, "Europe/Warsaw")
+        await ctx.send("test")
+
+    @commands.command(name="hour")
+    async def hour(self, ctx):
+        await ctx.send(f"Time rn: {datetime.now()} vs utc {datetime.utcnow()} vs pytz utc {datetime.now(pytz.utc)}")
 
     """
     @hourly_task.before_loop

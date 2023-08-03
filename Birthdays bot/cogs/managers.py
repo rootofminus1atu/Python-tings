@@ -3,9 +3,31 @@ from discord.ext import commands
 from colorama import Fore
 from typing import Optional, Tuple, Union
 from pymongo import ASCENDING
+from datetime import datetime, timezone
+import pytz
 
 
 SituationType = Tuple[Union[discord.Guild, discord.User], Optional[discord.TextChannel]]
+
+class TestingManager:
+    def __init__(self, bot: commands.Bot):
+        self.bot = bot
+        self.collection = self.bot.db['testing']
+
+    def create_time(self, hour, timezone_name):
+        target_date = datetime(2000, 1, 1, hour, 0, 0, 0, tzinfo=pytz.utc)
+        target_time = target_date.astimezone(pytz.timezone(timezone_name)).isoformat()
+
+        print(target_time)
+
+        self.collection.insert_one({
+            "name": "jeff",
+            "hour": hour,
+            "timezone": timezone,
+            "target_time": target_time
+        })
+
+
 
 class BirthdaysManager:
     def __init__(self, bot: commands.Bot):
@@ -132,3 +154,4 @@ class Helpers:
 async def setup(bot):
     bot.manager = BirthdaysManager(bot)
     bot.helpers = Helpers()
+    bot.testing = TestingManager(bot)
