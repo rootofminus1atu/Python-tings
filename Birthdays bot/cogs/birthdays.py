@@ -17,6 +17,7 @@ import pymongo
 # TODO:
 # - improve the _add command (into an embed, more info, add channel info)
 # - add birthday _update command
+# - make the _time command work
 
 class birthdays(commands.GroupCog, name="birthday"):
     def __init__(self, bot: commands.Bot) -> None:
@@ -108,12 +109,30 @@ class birthdays(commands.GroupCog, name="birthday"):
         await interaction.response.send_message(f"Set birthdays channel to {channel.mention}")
         
 
+    time_stuff = [
+        ("8"),
+        ("9"),
+        ("10")
+    ]
+
+    timezones = [
+        ("UTC", "UK, Portugal, Morocco, etc."),
+        ("UTC+1", "France, Poland, Chroatia, etc.")
+    ]
 
     @app_commands.command(name="time", description="change the time when birthdays are announced")
     @app_commands.describe(time="The time when birthdays are announced", timezone="The timezone")
-    async def _time(self, interaction: discord.Interaction, time: str, timezone: str):
+    @app_commands.choices(time=[
+        app_commands.Choice(name=f"{item}:00", value=f"{item}")
+        for item in time_stuff
+    ])
+    @app_commands.choices(timezone=[
+        app_commands.Choice(name=f"{item[0]} - {item[1]}", value=f"{item[0]}")
+        for item in timezones
+    ])
+    async def _time(self, interaction: discord.Interaction, time: app_commands.Choice[str], timezone: app_commands.Choice[str]):
         # changing the time and timezone in the db
-        await interaction.response.send_message(f"Set birthdays time to {time} {timezone}")
+        await interaction.response.send_message(f"Set birthdays time to {time.value} {timezone.name}")
 
 
 async def setup(bot):

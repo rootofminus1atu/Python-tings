@@ -4,9 +4,6 @@ from colorama import Fore
 from typing import Optional, Tuple, Union
 from pymongo import ASCENDING
 
-DEFAULT_TIME = 8
-DEFAULT_TIMEZONE = "UTC"
-# UTC contains countries like England, Portugal, Ghana, Morocco, Iceland, etc.
 
 SituationType = Tuple[Union[discord.Guild, discord.User], Optional[discord.TextChannel]]
 
@@ -14,6 +11,10 @@ class BirthdaysManager:
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.collection = self.bot.db['serious_birthdays_config']
+
+    DEFAULT_TIME = 8
+    DEFAULT_TIMEZONE = "UTC"
+    # UTC contains countries like England, Portugal, Ghana, Morocco, Iceland, etc.
 
     def create_config(self, situation: SituationType, and_birthday=None, time=DEFAULT_TIME, timezone=DEFAULT_TIMEZONE):
         place, channel = situation
