@@ -32,7 +32,7 @@ class reminder(commands.Cog):
         print(f"Time rn: {datetime.now().time()}")
         print(f"Time utc rn: {datetime.utcnow().time()}")
 
-    full_hours = [time(hour=hour, minute=13) for hour in range(24)]
+    full_hours = [time(hour=hour, minute=10) for hour in range(24)]
 
     @tasks.loop(time=full_hours)
     async def reminding(self):

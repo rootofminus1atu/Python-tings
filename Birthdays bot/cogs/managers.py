@@ -233,6 +233,9 @@ class Helpers:
             return (server, channel)
         else:
             return (user, None)
+        
+    def fancy_datetime(self, date: datetime):
+        return date.strftime("%d/%m/%Y %H:%M UTC")
 
 async def setup(bot):
     bot.manager = BirthdaysManager(bot)
