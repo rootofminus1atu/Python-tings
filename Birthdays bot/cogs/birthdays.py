@@ -5,6 +5,10 @@ from colorama import Fore
 from datetime import datetime
 import calendar
 import pymongo
+import pytz
+import zoneinfo
+import tzdata
+
 
 # NOTE:
 # `if not birthdays`
@@ -109,15 +113,10 @@ class birthdays(commands.GroupCog, name="birthday"):
         await interaction.response.send_message(f"Set birthdays channel to {channel.mention}")
         
 
-    time_stuff = [
-        ("8"),
-        ("9"),
-        ("10")
-    ]
+    time_stuff = [str(n) for n in range(24)]
 
     timezones = [
-        ("UTC", "UK, Portugal, Morocco, etc."),
-        ("UTC+1", "France, Poland, Chroatia, etc.")
+        ("UTC", "You get UTC only for now, sorry")
     ]
 
     @app_commands.command(name="time", description="change the time when birthdays are announced")
@@ -127,12 +126,22 @@ class birthdays(commands.GroupCog, name="birthday"):
         for item in time_stuff
     ])
     @app_commands.choices(timezone=[
-        app_commands.Choice(name=f"{item[0]} - {item[1]}", value=f"{item[0]}")
+        app_commands.Choice(name=f"{item[0]} ({item[1]})", value=f"{item[0]}")
         for item in timezones
     ])
     async def _time(self, interaction: discord.Interaction, time: app_commands.Choice[str], timezone: app_commands.Choice[str]):
-        # changing the time and timezone in the db
-        await interaction.response.send_message(f"Set birthdays time to {time.value} {timezone.name}")
+        situation = self.bot.helpers.get_situation(interaction)
+
+        chosen_time = int(time.value)
+        chosen_timezone = timezone.value
+
+        if not self.bot.manager.get_config(situation):
+            await self.bot.manager.create_config(situation, time=chosen_time, timezone=chosen_timezone)
+            await interaction.response.send_message(f"Set birthdays time to {chosen_time} {chosen_timezone}")
+            return
+
+        self.bot.manager.update_config_time(situation, chosen_time, chosen_timezone)
+        await interaction.response.send_message(f"Set birthdays time to {chosen_time} {chosen_timezone}")
 
 
 async def setup(bot):

@@ -9,7 +9,7 @@ import pytz
 from zoneinfo import ZoneInfo
 import tzdata
 
-another = time(hour=22, minute=53, tzinfo=ZoneInfo('Europe/Warsaw'))
+# some_hour_might_be_important_later = time(hour=22, minute=53, tzinfo=ZoneInfo('Europe/Warsaw'))
 
 
 class reminder(commands.Cog):
@@ -29,24 +29,58 @@ class reminder(commands.Cog):
 
     @tasks.loop(seconds=100)
     async def LOOPTESTING(self):
-        # channel = self.bot.get_channel(1031977836849922111)
         print(f"Time rn: {datetime.now().time()}")
         print(f"Time utc rn: {datetime.utcnow().time()}")
 
-    full_hours = [time(hour=hour, minute=0) for hour in range(24)]
+    full_hours = [time(hour=hour, minute=13) for hour in range(24)]
 
     @tasks.loop(time=full_hours)
     async def reminding(self):
-        await asyncio.sleep(1)  # sleep for 1 sec because discord updates hours too slowly for this
-        channel = self.bot.get_channel(1031977836849922111)
-        print(datetime.now().time())
-        await channel.send("FULL HOUR TEST")
+        print("=====================================")
+        start = datetime.utcnow()
+        print(start)
 
-        now = datetime.utcnow().time()
+        now = datetime.utcnow()
+
+        result = self.bot.manager.get_configs_with_birthdays_for_datetime(now)
+
+        for config in result:
+            embed = discord.Embed(
+                title="🎉 Birthdays today! 🎉",
+                description="\n".join([f"{birthday['person']} - {birthday['day']}/{birthday['month']}" for birthday in config["birthdays"]]),
+                color=discord.Color.random())
+            embed.set_footer(
+                text=now.strftime("%d/%m/%Y %H:%M UTC"))
+
+            if "channel_id" in config:
+                channel = self.bot.get_channel(config["channel_id"])
+                await channel.send(embed=embed)
+            else:
+                user = await self.bot.get_or_fetch_user(config["user_id"])
+                await user.send(embed=embed) 
+
+        end = datetime.utcnow()
+        print(end)
+        print(f"Time elapsed: {end - start}")
+        print("=====================================")
+
+    @commands.command(name="loopinvoke")
+    async def loopinvoke(self, ctx):
+        now = datetime.utcnow().replace(minute=0, hour=8, day=24, month=1)
         print(now)
 
+        result = self.bot.manager.get_configs_with_birthdays_for_datetime(now)
+        print(result)
 
-        # find configs with the time set to now
+        embed = discord.Embed(
+            title="🎉 Birthdays today! 🎉", 
+            description=str(result),
+            color=discord.Color.random())
+        embed.set_footer(
+            text=now.strftime("%d/%m/%Y %H:%M UTC"))
+        
+        await ctx.send(embed=embed)
+
 
 
     @commands.command(name="test")

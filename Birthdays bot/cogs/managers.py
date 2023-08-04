@@ -5,6 +5,8 @@ from typing import Optional, Tuple, Union
 from pymongo import ASCENDING
 from datetime import datetime, timezone
 import pytz
+import zoneinfo
+import tzdata
 
 
 SituationType = Tuple[Union[discord.Guild, discord.User], Optional[discord.TextChannel]]
@@ -13,6 +15,7 @@ class TestingManager:
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.collection = self.bot.db['testing']
+        self.collection_another = self.bot.db['testing_filtering']
 
     def create_time(self, hour, timezone_name):
         target_date = datetime(2000, 1, 1, hour, 0, 0, 0, tzinfo=pytz.utc)
@@ -26,6 +29,39 @@ class TestingManager:
             "timezone": timezone,
             "target_time": target_time
         })
+
+    def filtering_thing(self, date: datetime):
+        result = self.collection_another.aggregate([
+            {
+                "$match": {
+                    "time": date.hour,
+                    "birthdays": {
+                        "$elemMatch": {
+                            "day": date.day,
+                            "month": date.month
+                        }
+                    }
+                }
+            },
+            {
+                "$addFields": {
+                    "birthdays": {
+                        "$filter": {
+                            "input": "$birthdays",
+                            "as": "birthday",
+                            "cond": {
+                                "$and": [
+                                    { "$eq": ["$$birthday.day", date.day] },
+                                    { "$eq": ["$$birthday.month", date.month] }
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        ])
+        result_list = list(result)
+        return result_list
 
 
 
@@ -95,6 +131,20 @@ class BirthdaysManager:
             "channel_name": target_channel.name
         }})
 
+    def update_config_time(self, situation: SituationType, time: int, timezone: str):
+        place, channel = situation
+
+        if channel:
+            self.collection.update_one({"server_id": place.id}, {"$set": {
+                "time": time,
+                "timezone": timezone
+            }})
+        else:
+            self.collection.update_one({"user_id": place.id}, {"$set": {
+                "time": time,
+                "timezone": timezone
+            }})
+
     def add_birthday(self, situation: SituationType, birthday: dict):
         place, channel = situation
 
@@ -136,7 +186,40 @@ class BirthdaysManager:
             self.collection.update_one({"server_id": place.id}, {"$pull": {"birthdays": {"person": person}}})
         else:
             self.collection.update_one({"user_id": place.id}, {"$pull": {"birthdays": {"person": person}}})
-
+    
+    def get_configs_with_birthdays_for_datetime(self, date: datetime):
+        result = self.collection.aggregate([
+            {
+                "$match": {
+                    "time": date.hour,
+                    "birthdays": {
+                        "$elemMatch": {
+                            "day": date.day,
+                            "month": date.month
+                        }
+                    }
+                }
+            },
+            {
+                "$addFields": {
+                    "birthdays": {
+                        "$filter": {
+                            "input": "$birthdays",
+                            "as": "birthday",
+                            "cond": {
+                                "$and": [
+                                    { "$eq": ["$$birthday.day", date.day] },
+                                    { "$eq": ["$$birthday.month", date.month] }
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        ])
+        result_list = list(result)
+        return result_list
+    
 
 class Helpers:
     def get_situation(self, interaction: discord.Interaction):
