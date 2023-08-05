@@ -1,5 +1,8 @@
 from colorama import Fore, Style, Back
 from datetime import datetime
+from dotenv import load_dotenv
+import os
+load_dotenv()
 
 def print_report(text):
     rn = datetime.now().strftime("%y-%m-%d %H:%M:%S")
@@ -10,6 +13,7 @@ def see_colors():
         if color[0] != "_":
             print(f"{getattr(Fore, color)}{color}{Fore.RESET}")
 
+from xata.client import XataClient
 
-
-print_report("Loading dependencies")
+client = XataClient(db_url=os.getenv('XATA_DATABASE_URL'), api_key=os.getenv('XATA_API_KEY'))
+print(client.db_name)
