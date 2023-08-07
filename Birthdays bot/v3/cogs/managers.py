@@ -128,13 +128,10 @@ class BirthdaysManagerMotor(BaseManager):
         if not channel:
             return
 
-        await self.collection.update_one(
-            {"server_id": place.id}, 
-            {"$set": {
-                "channel_id": target_channel.id,
-                "channel_name": target_channel.name
-            }
-        })
+        await self.collection.update_one({"server_id": place.id}, {"$set": {
+            "channel_id": target_channel.id,
+            "channel_name": target_channel.name
+        }})
 
     async def update_config_time(self, situation: SituationType, time: int, timezone: str):
         place, channel = situation
@@ -160,7 +157,7 @@ class BirthdaysManagerMotor(BaseManager):
 
 
     async def get_birthdays(self, situation: SituationType) -> Optional[List]:
-        config: dict = await self.get_config(situation)
+        config = await self.get_config(situation)
 
         if not config:
             return None

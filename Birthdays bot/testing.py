@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Dict, List, Union
 import timeit
 
 DEFAULT_TIME = 8
@@ -33,124 +33,106 @@ class MyChannel(discord.TextChannel):
 
 
 
-class BirthdayManager:
-    def __init__(self, bot: commands.Bot):
+class BaseManager:
+    def __init__(self, bot: commands.Bot, collection: str):
         self.bot = bot
-        # self.collection = self.bot.db['serious_birthdays_config']
+        # self.collection = self.bot.db[collection]
+        self.collection = collection
 
-    def create_config(self, space, time=DEFAULT_TIME, timezone=DEFAULT_TIMEZONE):
-        raise NotImplementedError
-
-    def get_config(self, space):
-        raise NotImplementedError
-
-    def add_birthday(self, space, birthday):
-        raise NotImplementedError
-
-    def get_person_birthday(self, space, person):
-        raise NotImplementedError
-
-class ServerManager(BirthdayManager):
+class BirthdaysManagerMotor(BaseManager):
     def __init__(self, bot: commands.Bot):
-        super().__init__(bot)
+        super().__init__(bot, collection="birthdays-col")
 
-    def create_config(self, space: Tuple[discord.Guild, discord.TextChannel], time=DEFAULT_TIME, timezone=DEFAULT_TIMEZONE):
-        server, channel = space
-        chunk = {
-            "server_id": server.id,
-            "server_name": server.name,
-            "channel_id": channel.id,
-            "channel_name": channel.name,
-            "time": time,
-            "timezone": timezone,
-            "birthdays": []
-        }
-        print("Inserting", chunk)
-
-    def get_config(self, space: Tuple[discord.Guild, discord.TextChannel]) -> Optional[dict]:
-        server, _ = space
-        print("Getting config for", server)
-
-    def add_birthday(self, space: Tuple[discord.Guild, discord.TextChannel], birthday):
-        server, _ = space
-        print("Adding birthday", birthday, "to", server)
-
-    def get_person_birthday(self, space: Tuple[discord.Guild, discord.TextChannel], person):
-        server, _ = space
-        print("Getting birthday for", person, "in", server)
-
-class DmManager(BirthdayManager):
-    def __init__(self, bot: commands.Bot):
-        super().__init__(bot)
-
-    def create_config(self, space: Tuple[discord.User], time=DEFAULT_TIME, timezone=DEFAULT_TIMEZONE):
-        user = space[0]
-        chunk = {
-            "user_id": user.id,
-            "user_name": user.name,
-            "time": time,
-            "timezone": timezone,
-            "birthdays": []
-        }
-        print("Inserting", chunk)
-
-    def get_config(self, space: Tuple[discord.User]) -> Optional[dict]:
-        user = space[0]
-        print("Getting config for", user)
-
-    def add_birthday(self, space: Tuple[discord.User], birthday):
-        user, = space
-        print("Adding birthday", birthday, "to", user)
-
-    def get_person_birthday(self, space: Tuple[discord.User], person):
-        user = space[0]
-        print("Getting birthday for", person, "in", user)
-
-"""
-Mock example of bot commands using this new design pattern can be seen below
-"""
-
-def mock_command_add_birthday_server(bot, interaction, person, day, month):
-    if not person or not day or not month:
-        print("lol failed 1st check")
-        return
-    
-    birthday = {
-        "person": person,
-        "day": day,
-        "month": month
-    }
-
-    # either server
-    server = interaction.guild
-    channel = interaction.channel
-    # or dm
-    user = interaction.user
-
-    if server:
-        manager = ServerManager(bot)
-        situation = (server, channel)
-    else:
-        manager = DmManager(bot)
-        situation = (user,)
-
-    if not manager.get_config(situation):
-        manager.create_config(situation)
-        print(f"Added {person}'s birthday on {day}/{month}.")
-    else:
-        if manager.get_person_birthday(situation, person):
-            print(f"{person}'s birthday already exists.")
+    def interaction_type_filter(interaction: MyInteraction) -> Dict[str, int]:
+        """
+        Returns:
+            - `{"server_id": interaction.guild.id}` in the case of a server interaction
+            - `{"user_id": interaction.user.id}` in the case of a user interaction
+        """
+        if interaction.guild:
+            return {"server_id": interaction.guild.id}
         else:
-            manager.add_birthday(situation, birthday)
-            print(f"Added {person}'s birthday on {day}/{month}.")
+            return {"user_id": interaction.user.id}
+            
+        
 
-lol_bot = MyBot("lol")
+    async def create_config(self, interaction: MyInteraction, and_birthday=None, time=DEFAULT_TIME, timezone=DEFAULT_TIMEZONE) -> None:
+        server_or_user = self.interaction_type_filter(interaction)
 
-# works fine
-server_interaction = MyInteraction(MyGuild(999, "server"), MyChannel(999, "channel"), MyUser(5, "invoker"))
-mock_command_add_birthday_server(lol_bot, server_interaction, "someone else", 12, 3)
+        new_config = {
+            **server_or_user,
+            "time": time,
+            "timezone": timezone,
+            "birthdays": [] if and_birthday is None else [and_birthday]
+        }
 
-# doesn't work fine
-# the time becomes None
-dm_interaction = MyInteraction(None, None, MyUser(999, "someone"))
-mock_command_add_birthday_server(lol_bot, dm_interaction, "someone", 1, 4)
+        if interaction.guild:
+            new_config["channel_id"] = interaction.channel.id
+
+        await self.collection.insert_one(new_config)
+
+    async def get_config(self, interaction: MyInteraction) -> Optional[Dict]:
+        server_or_user = self.interaction_type_filter(interaction)
+
+        return await self.collection.find_one(server_or_user)
+        
+    async def get_config_from_person_birthday(self, interaction: MyInteraction, person: str) -> Optional[Dict]:
+        server_or_user = self.interaction_type_filter(interaction)
+
+        return await self.collection.find_one({
+            **server_or_user,
+            "birthdays": {"$elemMatch": {"person": person}}
+            })
+    
+    async def update_config_channel(self, interaction: MyInteraction, channel: MyChannel) -> None:
+        if interaction.guild is None:
+            return
+
+        server_or_user = self.interaction_type_filter(interaction)
+
+        await self.collection.update_one(
+            server_or_user, 
+            {"$set": {"channel_id": channel.id}})
+
+    async def update_config_time(self, interaction: MyInteraction, time: int, timezone: str) -> None:
+        server_or_user = self.interaction_type_filter(interaction)
+
+        await self.collection.update_one(
+            server_or_user, 
+            {"$set": {"time": time, "timezone": timezone}})
+        
+    async def add_birthday(self, interaction: MyInteraction, birthday: Dict) -> None:
+        server_or_user = self.interaction_type_filter(interaction)
+
+        await self.collection.update_one(
+            server_or_user, 
+            {"$push": {"birthdays": birthday}})
+        
+    async def remove_birthday(self, interaction: MyInteraction, person: str) -> None:
+        server_or_user = self.interaction_type_filter(interaction)
+
+        await self.collection.update_one(
+            server_or_user, 
+            {"$pull": {"birthdays": {"person": person}}})
+        
+    async def get_birthdays(self, interaction: MyInteraction) -> Optional[List[Dict]]:
+        server_or_user = self.interaction_type_filter(interaction)
+
+        config = await self.collection.find_one(server_or_user)
+        if config is None:
+            return None
+
+        return config["birthdays"]
+    
+    async def add_birthday_if_not_exist(self, interaction: MyInteraction, birthday: Dict) -> None:
+        server_or_user = self.interaction_type_filter(interaction)
+
+        cursor = self.collection.find({
+            **server_or_user,
+            "birthdays": {"$elemMatch": {"person": birthday["person"]}}
+            })
+        
+        if cursor.count() == 0:
+            pass
+            # WIP
+        
