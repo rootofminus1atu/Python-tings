@@ -72,6 +72,7 @@ class BaseManager:
 
 # NOTE:
 # I could use dispatchers and reducers to make this more efficient (look at react)
+# user Iterable instead of just List
 
 class BirthdaysManagerMotor(BaseManager):
     def __init__(self, bot: commands.Bot):

@@ -135,4 +135,33 @@ class BirthdaysManagerMotor(BaseManager):
         if cursor.count() == 0:
             pass
             # WIP
-        
+
+
+
+from datetime import datetime, timezone, timedelta
+from zoneinfo import ZoneInfo
+import tzdata
+
+def time_thing(hour: int, timzon: str):
+    rn = datetime.now(ZoneInfo("UTC")) + timedelta(days=180)
+
+    dt = rn.replace(hour=hour, tzinfo=ZoneInfo(timzon))
+
+    print(rn)
+    print(dt)
+    print(rn == dt)
+    return rn == dt
+
+time_thing(19, "Poland")
+
+hours = [i for i in range(24)]
+tzs = {
+    "UTC+0": {
+        "a": ""
+    }
+}
+
+def add_time(hour: int, timzon: str, dst: bool):
+    pass
+
+    

@@ -22,6 +22,17 @@ import tzdata
 # - improve the _add command (into an embed, more info, add channel info)
 # - add birthday _update command
 # - make the _time command work
+# - _time command autocompletion with timezones
+
+# REMINDER TO CHECK THIS
+time_stuff = [str(n) for n in range(100)]
+
+timezones = [
+    ("GMT", "Countries like: Ireland, Portugal, Morocco"),
+    ("PST", "California, Oregon, Washington"),
+    ("CST", "Texas, Illinois, Minnesota"),
+]
+
 
 class birthdays(commands.GroupCog, name="birthday"):
     def __init__(self, bot: commands.Bot) -> None:
@@ -119,11 +130,7 @@ class birthdays(commands.GroupCog, name="birthday"):
         await interaction.response.send_message(f"Set birthdays channel to {channel.mention}")
         
 
-    time_stuff = [str(n) for n in range(24)]
 
-    timezones = [
-        ("UTC", "You get UTC only for now, sorry")
-    ]
 
     @app_commands.command(name="time", description="change the time when birthdays are announced")
     @app_commands.describe(time="The time when birthdays are announced", timezone="The timezone")
