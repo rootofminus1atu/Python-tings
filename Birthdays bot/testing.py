@@ -143,8 +143,7 @@ from zoneinfo import ZoneInfo
 import tzdata
 
 def time_thing(hour: int, timzon: str):
-    rn = datetime.now(ZoneInfo("UTC")) + timedelta(days=180)
-
+    rn = datetime.now(ZoneInfo("UTC"))
     dt = rn.replace(hour=hour, tzinfo=ZoneInfo(timzon))
 
     print(rn)
