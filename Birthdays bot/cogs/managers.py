@@ -70,6 +70,20 @@ class BaseManager:
         self.bot = bot
         self.collection = self.bot.db[collection]
 
+
+    def interaction_type_filter(self, interaction: discord.Interaction) -> Dict[str, int]:
+        """
+        Returns:
+            - `{"server_id": interaction.guild.id}` in the case of a server interaction
+            - `{"user_id": interaction.user.id}` in the case of a user interaction
+        """
+        print(interaction)
+
+        if interaction.guild:
+            return {"server_id": interaction.guild.id}
+        else:
+            return {"user_id": interaction.user.id}
+
 # NOTE:
 # I could use dispatchers and reducers to make this more efficient (look at react)
 # user Iterable instead of just List
@@ -78,100 +92,94 @@ class BirthdaysManagerMotor(BaseManager):
     def __init__(self, bot: commands.Bot):
         super().__init__(bot, collection="serious_birthdays_config")
 
-    async def create_config(self, situation: SituationType, and_birthday=None, time=DEFAULT_TIME, timezone=DEFAULT_TIMEZONE):
-        place, channel = situation
+    async def create_config(self, interaction: discord.Interaction, and_birthday=None, time=DEFAULT_TIME, timezone=DEFAULT_TIMEZONE):
+        server_or_user = self.interaction_type_filter(interaction)
 
-        # if channel === if we're in a server
-        if channel:
-            config = {
-                "server_id": place.id,
-                "server_name": place.name,
-                "channel_id": channel.id,
-                "channel_name": channel.name
-            }
-        else:
-            config = {
-                "user_id": place.id,
-                "user_name": place.name
-            }
-        
-        config.update({
+        new_config = {
+            **server_or_user,
             "time": time,
             "timezone": timezone,
-            "birthdays": []
-        })
+            "birthdays": [] if and_birthday is None else [and_birthday]
+        }
 
-        if and_birthday:
-            config["birthdays"].append(and_birthday)
+        if interaction.guild:
+            new_config["channel_id"] = interaction.channel.id
 
-        await self.collection.insert_one(config)
-        return config
+        await self.collection.insert_one(new_config)
+        return new_config
     
-    async def get_config(self, situation: SituationType):
-        place, channel = situation
+    async def get_config(self, interaction: discord.Interaction) -> Optional[Dict]:
+        server_or_user = self.interaction_type_filter(interaction)
 
-        if channel:
-            return await self.collection.find_one({"server_id": place.id})
-        else:
-            return await self.collection.find_one({"user_id": place.id})
+        return await self.collection.find_one(server_or_user)
         
-    async def get_config_from_person_birthday(self, situation: SituationType, person: str) -> Optional[Dict]:
-        place, channel = situation
+    async def get_config_from_person_birthday(self, interaction: discord.Interaction, person: str) -> Optional[Dict]:
+        server_or_user = self.interaction_type_filter(interaction)
 
-        if channel:
-            return await self.collection.find_one({"server_id": place.id, "birthdays": {"$elemMatch": {"person": person}}})
-        else:
-            return await self.collection.find_one({"user_id": place.id, "birthdays": {"$elemMatch": {"person": person}}})
+        return await self.collection.find_one({
+            **server_or_user,
+            "birthdays": {"$elemMatch": {"person": person}}
+            })
     
-    async def update_config_channel(self, situation: SituationType, target_channel: discord.TextChannel):
-        place, channel = situation
-
-        if not channel:
+    async def update_config_channel(self, interaction: discord.Interaction, channel: discord.TextChannel) -> None:
+        if interaction.guild is None:
             return
 
+        server_or_user = self.interaction_type_filter(interaction)
+
         await self.collection.update_one(
-            {"server_id": place.id}, 
-            {"$set": {
-                "channel_id": target_channel.id,
-                "channel_name": target_channel.name
-            }
-        })
+            server_or_user, 
+            {"$set": {"channel_id": channel.id}}
+            )
+        
+    async def update_config_time(self, interaction: discord.Interaction, time: int, timezone: str) -> None:
+        server_or_user = self.interaction_type_filter(interaction)
 
-    async def update_config_time(self, situation: SituationType, time: int, timezone: str):
-        place, channel = situation
+        await self.collection.update_one(
+            server_or_user, 
+            {"$set": {"time": time, "timezone": timezone}}
+            )
 
-        if channel:
-            await self.collection.update_one({"server_id": place.id}, {"$set": {
-                "time": time,
-                "timezone": timezone
-            }})
-        else:
-            await self.collection.update_one({"user_id": place.id}, {"$set": {
-                "time": time,
-                "timezone": timezone
-            }})
+    async def add_birthday(self, interaction: discord.Interaction, birthday: Dict) -> None:
+        server_or_user = self.interaction_type_filter(interaction)
 
-    async def add_birthday(self, situation: SituationType, birthday: dict):
-        place, channel = situation
+        await self.collection.update_one(
+            server_or_user, 
+            {"$push": {"birthdays": birthday}})
+        
+    async def remove_birthday(self, interaction: discord.Interaction, person: str) -> None:
+        server_or_user = self.interaction_type_filter(interaction)
 
-        if channel:
-            await self.collection.update_one({"server_id": place.id}, {"$push": {"birthdays": birthday}})
-        else:
-            await self.collection.update_one({"user_id": place.id}, {"$push": {"birthdays": birthday}})
+        await self.collection.update_one(
+            server_or_user, 
+            {"$pull": {"birthdays": {"person": person}}})
 
+    async def get_birthdays(self, interaction: discord.Interaction) -> Optional[List[Dict]]:
+        server_or_user = self.interaction_type_filter(interaction)
 
-    async def get_birthdays(self, situation: SituationType) -> Optional[List]:
-        config: dict = await self.get_config(situation)
-
-        if not config:
+        config = await self.collection.find_one(server_or_user)
+        if config is None:
             return None
 
-        birthdays = config.get("birthdays", [])
-
-        sorted_birthdays = sorted(birthdays, key=lambda bday: (bday["month"], bday["day"]))
-
-        return sorted_birthdays
+        return config["birthdays"]
     
+
+    # do I need this?
+    async def add_birthday_if_not_exist(self, interaction: discord.Interaction, birthday) -> Optional[Dict]:
+        server_or_user = self.interaction_type_filter(interaction)
+
+        config = await self.get_config_from_person_birthday(interaction, birthday["person"])
+
+        if config is None:
+            await self.create_config(interaction, and_birthday=birthday)
+            return
+        
+        await self.add_birthday(interaction, birthday)
+
+
+
+    # work on those below now
+
     async def get_birthday_from_person(self, situation: SituationType, person: str) -> Optional[list]:
         config = await self.get_config(situation)
 
@@ -186,13 +194,6 @@ class BirthdaysManagerMotor(BaseManager):
         
         return None
     
-    async def remove_birthday(self, situation: SituationType, person: str):
-        place, channel = situation
-
-        if channel:
-            await self.collection.update_one({"server_id": place.id}, {"$pull": {"birthdays": {"person": person}}})
-        else:
-            await self.collection.update_one({"user_id": place.id}, {"$pull": {"birthdays": {"person": person}}})
 
     async def get_configs_with_birthdays_for_datetime(self, date: datetime):
         # this could definitely use more async stuff

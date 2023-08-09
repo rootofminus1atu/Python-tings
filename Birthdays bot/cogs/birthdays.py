@@ -23,15 +23,25 @@ import tzdata
 # - add birthday _update command
 # - make the _time command work
 # - _time command autocompletion with timezones
+# - maybe replace _time and _channel with _mode and add more functionality
 
 # REMINDER TO CHECK THIS
-time_stuff = [str(n) for n in range(100)]
+time_stuff = [str(n) for n in range(24)]
 
 timezones = [
     ("GMT", "Countries like: Ireland, Portugal, Morocco"),
     ("PST", "California, Oregon, Washington"),
     ("CST", "Texas, Illinois, Minnesota"),
 ]
+
+class Embeds:
+    @staticmethod
+    def added_birthday(birthday: dict):
+        embed = discord.Embed(
+            title=f"Added {birthday['person']}'s birthday on {birthday['day']}/{birthday['month']}",
+            color=discord.Color.random()
+        )
+        return embed
 
 
 class birthdays(commands.GroupCog, name="birthday"):
@@ -60,33 +70,47 @@ class birthdays(commands.GroupCog, name="birthday"):
             "day": day,
             "month": month
         }
+        embed = Embeds.added_birthday(birthday)
 
-        situation = self.bot.helpers.get_situation(interaction)
-
-        # reminder:
-        # add cases for servers and dms, channel vs no channel
-        if not await self.bot.manager.get_config(situation):
-            new_config = await self.bot.manager.create_config(situation, and_birthday=birthday)
-            await interaction.response.send_message(f"Added {person}'s birthday on {day}/{month}. Configuration was created. Currently birthdays will be sent at 8am UTC. Change them using `/birthday channel` and `/birthday time`. (I might add a `/birthday mode` instead in the future)")
-            return
+        # TODO:
+        # change the embed texts and include the proper channel
         
-        if await self.bot.manager.get_config_from_person_birthday(situation, person):
+        if not await self.bot.manager.get_config(interaction):
+            new_config = await self.bot.manager.create_config(interaction, and_birthday=birthday)
+
+            if interaction.guild:
+                embed.description = f"Configuration was created. Currently birthdays will be sent at 8am UTC in {new_config['channel']}. Change them using `/birthday channel` and `/birthday time`."
+            else:
+                embed.description = f"Configuration was created. Currently birthdays will be sent at 8am UTC. Change it using `/birthday time`."
+            
+            await interaction.response.send_message(embed=embed)
+            return
+
+
+        if await self.bot.manager.get_config_from_person_birthday(interaction, person):
             await interaction.response.send_message(f"{person}'s birthday already exists.")
             return
         
-        await self.bot.manager.add_birthday(situation, birthday)
-        await interaction.response.send_message(f"Added {person}'s birthday on {day}/{month}. Await birthdays to be sent at 8am UTC. Change them using `/birthday channel` and `/birthday time`. (I might add a `/birthday mode` instead in the future)")
+
+        await self.bot.manager.add_birthday(interaction, birthday)
+
+        if interaction.guild:
+            embed.description = f"Await birthdays to be sent at 8am UTC in {interaction.channel.mention}. Change them using `/birthday channel` and `/birthday time`."
+        else:
+            embed.description = f"Await birthdays to be sent at 8am UTC. Change it using `/birthday time`."
+
+        await interaction.response.send_message(embed=embed)
 
 
     @app_commands.command(name="upcoming", description="get upcoming birthdays")
     async def _upcoming(self, interaction: discord.Interaction):
-        situation = self.bot.helpers.get_situation(interaction)
-
-        birthdays = await self.bot.manager.get_birthdays(situation)
+        birthdays = await self.bot.manager.get_birthdays(interaction)
 
         if not birthdays:
             await interaction.response.send_message("There are no birthdays.")
             return
+
+        # format them better, order in a chronological order based on the datetime
 
         formatted_birthdays = [
             f"{birthday['person']} - {birthday['day']}/{birthday['month']}"
@@ -104,17 +128,15 @@ class birthdays(commands.GroupCog, name="birthday"):
     @app_commands.command(name="remove", description="remove a birthday")
     @app_commands.describe(person="Whose birthday?")
     async def _remove(self, interaction: discord.Interaction, person: str):
-        situation = self.bot.helpers.get_situation(interaction)
-
-        if not await self.bot.manager.get_config(situation):
+        if not await self.bot.manager.get_config(interaction):
             await interaction.response.send_message("There are no birthdays.")
             return
 
-        if not await self.bot.manager.get_birthday_from_person(situation, person):
+        if not await self.bot.manager.get_birthday_from_person(interaction, person):
             await interaction.response.send_message(f"{person}'s birthday doesn't exist.")
             return
 
-        await self.bot.manager.remove_birthday(situation, person)
+        await self.bot.manager.remove_birthday(interaction, person)
         await interaction.response.send_message(f"Removed {person}'s birthday.")
 
     @app_commands.command(name="channel", description="change the channel where birthdays are announced")
