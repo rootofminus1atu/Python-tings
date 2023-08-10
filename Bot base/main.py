@@ -49,7 +49,7 @@ class MyBot(commands.Bot):
         await self.sync_all()
 
     async def setup_hook(self):
-        await self.connect_motor()
+        # await self.connect_motor()
         await self.setup_extensions()
 
 

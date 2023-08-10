@@ -47,4 +47,7 @@ class MainManager:
         self.birthday = BirthdaysManager(bot)
 
 async def setup(bot):
-    bot.manager = MainManager(bot)
+    try:
+        bot.manager = MainManager(bot)
+    except:
+        print(f"{Fore.RED}Error setting up manager{Fore.RESET}")
