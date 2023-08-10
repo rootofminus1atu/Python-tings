@@ -4,7 +4,10 @@ from discord import app_commands
 
 from extensions.important.cog_base import CogBase
 
-class cog2(CogBase):
+class cog2(CogBase, name="Db stuff"):
+    """
+    This cog has a description too
+    """
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 

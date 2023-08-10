@@ -5,7 +5,7 @@ from typing import List, Literal, Tuple, Dict
 
 from extensions.important.cog_base import CogBase
 
-class cog1(CogBase):
+class cog1(CogBase, name="Testing grounds"):
     """
     This cog is cog1 lol
     """
@@ -28,7 +28,7 @@ class cog1(CogBase):
         
         embeds = []
 
-        for name, cog in cogsss.items():
+        for i, (name, cog) in enumerate(cogsss.items()):
             print("=====================================")
             found_coms: List[commands.Command] = cog.get_commands()
             found_slashs: List[app_commands.Command] = cog.get_app_commands()
@@ -36,7 +36,7 @@ class cog1(CogBase):
 
             
             embed = discord.Embed(
-                title=f"{name}",
+                title=f"{i+1}. {name}",
                 description=cog.description if cog.description else "No description provided",
                 color=discord.Color.random())
 
