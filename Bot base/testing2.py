@@ -66,6 +66,9 @@ class Interval:
     def __repr__(self) -> str:
         return f"Interval(lower_closed={self.lower_closed}, lower_num={self.lower_num}, upper_num={self.upper_num}, upper_closed={self.upper_closed})"
     
+    def __str__(self) -> str:
+        return self.field
+
     def __contains__(self, value: float) -> bool:
         lower_check = self.lower_num <= value if self.lower_closed else self.lower_num < value
         upper_check = value <= self.upper_num if self.upper_closed else value < self.upper_num
@@ -110,6 +113,7 @@ class IntervalMap:
     def __init__(self, values: dict = None, not_found_case=None):
         self.data = {Interval(key): value for key, value in values.items()}
         self.not_found_case = not_found_case
+        self.datav2 = {key: (Interval(key), value) for key, value in values.items()}
 
     def __repr__(self) -> str:
         return f"<IntervalMap {'{'}{', '.join(f'{interval.field}: {value}' for interval, value in self.data.items())}{'}'}>"
@@ -132,7 +136,49 @@ class IntervalMap:
         return self.not_found_case
     
 
+class IntervalMap2:
+    def __init__(self, the_dict: dict = None, not_found_case=None):
+        self.data = {key: (Interval(key), value) for key, value in the_dict.items()}
+        self.not_found_case = not_found_case
+
+    def __repr__(self) -> str:
+        return f"<IntervalMap {'{'}{', '.join(f'{key}: {value}' for key, (_, value) in self.data.items())}{'}'}>"
     
+    def __getitem__(self, key: str) -> Any:
+        _, value = self.data[key]
+        return value
+    
+    def __setitem__(self, key: str, value: Any) -> None:
+        self.data[key] = (Interval(key), value)
+
+    def keys(self) -> list:
+        return list(self.data.keys())
+    
+    def values(self) -> list:
+        return [value for _, value in self.data.values()]
+    
+    def intervals(self) -> list:
+        return [interval for interval, _ in self.data.values()]
+    
+    def items(self) -> list:
+        return [(key, value) for key, (_, value) in self.data.items()]
+    
+    def slide(self, num: float) -> Any:
+        for _, (interval, value) in self.data.items():
+            if num in interval:
+                return value
+            
+        return self.not_found_case
+
+
+itv2 = IntervalMap2({
+    "(-inf, 1)": "cold",
+    "[1, 15)": "medium",
+    "[15, inf)": "hot"
+})
+
+print(itv2)
+
 
 
 interval = Interval("(-10, 6]")
