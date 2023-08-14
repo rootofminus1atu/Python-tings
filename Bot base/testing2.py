@@ -54,7 +54,17 @@ print(m1)
 class InvervalInvalid(Exception):
     pass
 
+
 class Interval:
+    """
+    A class that represents intervals.
+
+    The intervals defined with this class are connected and continuous, for example `(1, 2]` or `(-inf, -5)`. 
+    Disjoint intervals are not supported.
+    Interval operations like `(1, 3) u (2, 4)` or `[1, 4] \ (2, 3)` are not supported either. 
+    
+    Singletons like `{1}` are supported, however you must write them down like `[1, 1]`.
+    """
     def __init__(self, field: str):
         lower_closed, lower_num, upper_num, upper_closed = self.parse(field)
         self.field = field
@@ -121,91 +131,127 @@ class Interval:
             raise InvervalInvalid(f"'{field}' is not a valid Interval. First value must be less than second value.")
 
         return lower_closed, lower, upper, upper_closed
-
-class IntervalMap:
-    def __init__(self, values: dict = None, not_found_case=None):
-        self.data = {Interval(key): value for key, value in values.items()}
-        self.not_found_case = not_found_case
-        self.datav2 = {key: (Interval(key), value) for key, value in values.items()}
-
-    def __repr__(self) -> str:
-        return f"<IntervalMap {'{'}{', '.join(f'{interval.field}: {value}' for interval, value in self.data.items())}{'}'}>"
     
-    def values(self) -> list:
-        return list(self.data.values())
-    
-    def __getitem__(self, key: float) -> Any:
-        for interval, value in self.data.items():
-            if key in interval:
-                return value
+    @staticmethod
+    def have_overlap(first: 'Interval', second: 'Interval') -> bool:
+        """
+        Returns True if the two intervals have an overlap, False otherwise.
+        """
+        if not isinstance(first, Interval) or not isinstance(second, Interval):
+            raise TypeError(f"Incorrect types for arguments. Expected Interval, got {type(first)} and {type(second)}.")
+        
+        if first.upper_num < second.lower_num:
+            return False
 
-        return self.not_found_case
-    
-    def slide(self, key: float) -> Any:
-        for interval, value in self.data.items():
-            if key in interval:
-                return value
+        if second.upper_num < first.lower_num:
+            return False
 
-        return self.not_found_case
-    
+        if first.upper_num == second.lower_num and (not first.upper_closed or not second.lower_closed):
+            return False
 
-class IntervalMap2:
-    def __init__(self, the_dict: dict = None, not_found_case=None):
-        self.data = {key: (Interval(key), value) for key, value in the_dict.items()}
-        self.not_found_case = not_found_case
+        if second.upper_num == first.lower_num and (not second.upper_closed or not first.lower_closed):
+            return False
 
-    def __repr__(self) -> str:
-        return f"<IntervalMap {'{'}{', '.join(f'{key}: {value}' for key, (_, value) in self.data.items())}{'}'}>"
-    
-    def __getitem__(self, key: str) -> Any:
-        _, value = self.data[key]
-        return value
-    
-    def __setitem__(self, key: str, value: Any) -> None:
-        self.data[key] = (Interval(key), value)
-
-    def keys(self) -> list:
-        return list(self.data.keys())
-    
-    def values(self) -> list:
-        return [value for _, value in self.data.values()]
-    
-    def intervals(self) -> list:
-        return [interval for interval, _ in self.data.values()]
-    
-    def items(self) -> list:
-        return [(key, value) for key, (_, value) in self.data.items()]
-    
-    def slide(self, num: float) -> Any:
-        for _, (interval, value) in self.data.items():
-            if num in interval:
-                return value
-            
-        return self.not_found_case
-
-
-itv2 = IntervalMap2({
-    "(-inf, 1)": "cold",
-    "[1, 15)": "medium",
-    "[15, inf)": "hot"
-})
-
-print(itv2)
+        return True
 
 
 
-interval = Interval("(-10, 6]")
+    @staticmethod
+    def are_disjoint(first: 'Interval', second: 'Interval') -> bool:
+        """
+        Returns True if the two intervals are disjoint, False otherwise.
+        """
+        if not isinstance(first, Interval) or not isinstance(second, Interval):
+            raise TypeError(f"Incorrect types for arguments. Expected Interval, got {type(first)} and {type(second)}.")
+        
+        # disjoint calculations
+        # Case 1: The upper bound of the first interval is less than the lower bound of the second interval
+        if first.upper_num < second.lower_num:
+            return True
+        
+        # Case 2: The lower bound of the first interval is greater than the upper bound of the second interval
+        if first.lower_num > second.upper_num:
+            return True
+        
+        # Case 3: The upper bound of the first interval is equal to the lower bound of the second interval,
+        # and at least one of them is not closed
+        if first.upper_num == second.lower_num and (not first.upper_closed or not second.lower_closed):
+            return True
+        
+        # Case 4: The lower bound of the first interval is equal to the upper bound of the second interval,
+        # and at least one of them is not closed
+        if first.lower_num == second.upper_num and (not first.lower_closed or not second.upper_closed):
+            return True
+        
+        # If none of the disjoint cases are met, the intervals must overlap
+        return False
+        
 
-m2 = IntervalMap({
-    "(-inf, 1)": "cold",
-    "[1, 15)": "medium",
-    "[15, inf)": "hot"
-}, not_found_case="not found")
 
-print(m2)
-print(m2.slide(6))
-print(m2[5])
 
+
+    def is_overlapping_with(self, other: 'Interval') -> bool:
+        """
+        Returns True if the two intervals intersect, False otherwise.
+        """
+        if not isinstance(other, Interval):
+            raise TypeError(f"Cannot compare Interval with {type(other)}.")
+
+        # overlap calculations
+        so = self.__singular_overlap(other)
+        co = self.__continuous_overlap(other)
+
+        return so or co
+
+
+    @staticmethod
+    def __order_in_lower_starting(first: 'Interval', second: 'Interval') -> tuple['Interval', 'Interval']:
+        """
+        Returns the first and second interval based on the lower numbers of the intervals. 
+
+        E. g. if `first` is `(2, 4)` and `second` is `(1, 3)`, the method will return `((1, 3), (2, 4))`.
+        """
+
+        # change for more isinstance things
+        if not isinstance(first, Interval) or not isinstance(second, Interval):
+            raise TypeError(f"Incorrect types for arguments. Expected Interval, got {type(first)} and {type(second)}.")
+        
+        if first.lower_num < second.lower_num:
+            return first, second
+        elif first.lower_num > second.lower_num:
+            return second, first
+        
+        if first.lower_closed and not second.lower_closed:
+            return first, second
+        elif not first.lower_closed and second.lower_closed:
+            return second, first
+        
+        # case when they start at the same number and have the same lower_closed
+        return first, second
+
+    def __singular_overlap(self, other: 'Interval') -> bool:
+        """
+        Returns True if the two intervals have a singular overlap, False otherwise.
+        """
+        if not isinstance(other, Interval):
+            raise TypeError(f"Cannot compare Interval with {type(other)}.")
+        
+        # possibly other calculations for which one is "first" and which one is "second"
+        first, second = self.__order_in_lower_starting(self, other)
+
+        # overlap calculations
+
+    def __continuous_overlap(self, other: 'Interval') -> bool:
+        """
+        Returns True if the two intervals have a continuous overlap, False otherwise.
+        """
+        if not isinstance(other, Interval):
+            raise TypeError(f"Cannot compare Interval with {type(other)}.")
+        
+        # possibly other calculations for which one is "first" and which one is "second"
+        first, second = self.__order_in_lower_starting(self, other)
+
+        # overlap calculations
 
 
 class OverlappingIntervalsError(Exception):
@@ -264,4 +310,17 @@ print(m3)
 m3.pop(Interval("[1, 15)"))
 
 print(m3)
+
+
+test_itvs = [
+    (Interval("(-inf, 2)"), Interval("(1, 3)")),
+    (Interval("(-inf, 2)"), Interval("(2, 3)")),
+    (Interval("[1, 2)"), Interval("(0, 1]"))
+]
+
+for first, second in test_itvs:
+    print("first:", first)
+    print("second:", second)
+    print("Have overlap:", Interval.have_overlap(first, second))
+    print("=====================================")
 
