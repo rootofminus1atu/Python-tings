@@ -1,7 +1,6 @@
 from typing import Dict, Any, Optional
 import re
 from dataclasses import dataclass
-from enum import Enum, auto
 
 # TODO:
 # - better error messages with regex
@@ -69,78 +68,8 @@ class BoundaryValue:
 
 
 
-
-
-
-
-
-
 class IvalidIntervalError(Exception):
     pass
-
-class IntervalParser:
-    REAL_NUM = r"-?\d*\.?\d+"
-    POS_INF = r"\+?(inf)"
-    NEG_INF = r"(-inf)"
-    LEFT_BRACKET = r"(\[|\()"
-    RIGHT_BRACKET = r"(\]|\))"
-
-    def validate_input(self, field: str) -> None:
-        pattern_str = rf"^\s*{self.LEFT_BRACKET}\s*({self.NEG_INF}|{self.REAL_NUM})\s*,\s*({self.REAL_NUM}|{self.POS_INF})\s*{self.RIGHT_BRACKET}\s*$"
-        pattern = re.compile(pattern_str, re.IGNORECASE)
-
-        if re.match(pattern, field) is None:
-            raise IvalidIntervalError(f"'{field}' is not a valid Interval. Must be in format '[min, max]', '[min, max)', '(min, max]' or '(min, max)'.")
-        
-    def validate_data(self, first: BoundaryValue, second: BoundaryValue, field: str) -> None:
-        if first.number > second.number:
-            raise IvalidIntervalError(f"First value must be less than second value.")
-        
-        if first.number == second.number and (first.open and second.open):
-            raise IvalidIntervalError(f"An interval cannot be open from both sides. (Open sets coming soon tho)")
-
-        if first.number == second.number and (first.open or second.open):
-            raise IvalidIntervalError(f"A single value cannot be both open and closed from 2 different sides.")
-        
-
-    def extract_data(self, field: str) -> tuple[str, float | int, float | int, str]:
-        field_stripped = field.strip()
-        left_bracket = field_stripped[0]
-        right_bracket = field_stripped[-1]
-        insides = field_stripped[1:-1].strip()
-        insides_split = insides.split(",")
-        left_num = insides_split[0].strip()
-        right_num = insides_split[1].strip()
-
-        lower_closed = left_bracket == "["
-        upper_closed = right_bracket == "]"
-
-        try: 
-            lower = int(left_num)
-        except ValueError:
-            lower = float(left_num)
-        try:
-            upper = int(right_num)
-        except ValueError:
-            upper = float(right_num)
-
-        return lower_closed, lower, upper, upper_closed
-
-    def parse(self, field: str) -> tuple[BoundaryValue, BoundaryValue]:
-        self.validate_input(field)
-
-        lower, lower_closed, upper, upper_closed = self.extract_data(field)
-
-        first, second = BoundaryValue(lower, lower_closed), BoundaryValue(upper, upper_closed)
-
-        try:
-            self.validate_data(first, second)
-        except IvalidIntervalError as e:
-            raise IvalidIntervalError(f"'{field}' is not a valid Interval. {e}")
-
-        return first, second
-
-
 
 class Interval:
     """
@@ -153,10 +82,10 @@ class Interval:
     Singletons like `{1}` are supported, however you must write them down like `[1, 1]`.
     """
     def __init__(self, field: str):
-        lower, upper = IntervalParser().parse(field)
-        self.field: str = field
-        self.lower: BoundaryValue = lower
-        self.upper: BoundaryValue = upper
+        lower_closed, lower_number, upper_number, upper_closed = self.parse(field)
+        self.field = field
+        self.lower = BoundaryValue(lower_number, lower_closed)
+        self.upper = BoundaryValue(upper_number, upper_closed)
 
     def __repr__(self) -> str:
         return f"{self.field}"
@@ -220,11 +149,53 @@ class Interval:
 
         return True
 
+    def validate(self, field: str) -> None:
+        real_num = r"-?\d*\.?\d+"
+        pos_inf = r"\+?(inf)"
+        neg_inf = r"(-inf)"
+        left_bracket = r"(\[|\()"
+        right_bracket = r"(\]|\))"
 
-itv = Interval("[1, inf)")
-print(itv)
-print(999 in itv)  # True
+        pattern_str = rf"^\s*{left_bracket}\s*({neg_inf}|{real_num})\s*,\s*({real_num}|{pos_inf})\s*{right_bracket}\s*$"
+        pattern = re.compile(pattern_str, re.IGNORECASE)
 
+        if re.match(pattern, field) is None:
+            raise IvalidIntervalError(f"'{field}' is not a valid Interval. Must be in format '[min, max]', '[min, max)', '(min, max]' or '(min, max)'.")
+
+    def parse(self, field: str) -> tuple[bool, float, float, bool]:
+        """
+        Parses the string representation of an interval and returns a tuple of the form `(lower_closed, lower, upper, upper_closed)`.
+
+        Before the parsing occurs, the string is validated with the `validate` method. If the string is not valid, an `IvalidIntervalError` is raised.
+
+        Another `InvalidIntervalError` is raised if the first value is greater than the second value.
+        """
+        self.validate(field)
+
+        field_stripped = field.strip()
+        left_bracket = field_stripped[0]
+        right_bracket = field_stripped[-1]
+        insides = field_stripped[1:-1].strip()
+        insides_split = insides.split(",")
+        left_num = insides_split[0].strip()
+        right_num = insides_split[1].strip()
+
+        lower_closed = left_bracket == "["
+        upper_closed = right_bracket == "]"
+
+        try: 
+            lower = int(left_num)
+        except ValueError:
+            lower = float(left_num)
+        try:
+            upper = int(right_num)
+        except ValueError:
+            upper = float(right_num)
+
+        if lower > upper:
+            raise IvalidIntervalError(f"'{field}' is not a valid Interval. First value must be less than second value.")
+
+        return lower_closed, lower, upper, upper_closed
 
 
 
@@ -279,3 +250,61 @@ class AnotherIntervalMap(dict):
                 if i1.overlaps_with(i2):
                     raise OverlappingIntervalsError(f"Intervals {i1} and {i2} overlap. Overlapping intervals are not supported.")
 
+
+itv = Interval("[1, 4]")
+itv2 = Interval("[2, 3]")
+result = itv.intersection(itv2)
+print(result)
+print(itv, itv2)
+
+print(Interval("(2, 2)"))
+
+
+"""
+itv = Interval("[1, inf)")
+print(itv)
+print(itv.lower)
+print(itv.upper)
+print(float("inf") in itv)
+print(itv == Interval("[1, inf]"))
+
+itv_overlap_tests = [
+    ("[1, 2]", "[2, 3]", True),
+    ("[1, 2]", "[1, 3]", True),
+    ("[1, 2]", "[1, 2]", True),
+    ("[1, 2]", "(0, 1)", False),
+    ("[1, 2]", "[0, 0]", False),
+    ("[1, 2)", "[0, 0.5)", False),
+    ("[1, 2]", "[0, 1.5)", True),
+    ("[1, 2]", "[0, 2]", True),
+    ("[1, 2]", "[0, 3]", True),
+    ("[1, 2]", "[1, 3]", True),
+    ("[1, 2]", "[1, 2]", True),
+    ("(1, 2]", "[1, 1]", False),
+    ("(3, 4)"," (1, 2)", False),
+    ("(3, 4)"," (2, 3)", False),
+    ("[3, 4)"," (2, 3)", False),
+    ("[3, 4)"," (2, 3]", True),
+    ("[5, inf)"," (-inf, 2]", False),
+]
+
+for first, second, expected in itv_overlap_tests:
+    first_itv = Interval(first)
+    second_itv = Interval(second)
+    print(first_itv, second_itv, first_itv.overlaps_with(second_itv), expected)
+    print("=====================================")
+
+
+mp = {
+    Interval("(-inf, 1)"): "cold",
+    Interval("[1, 15)"): "medium",
+    Interval("[15, 30)"): "hot"
+}
+
+m3 = AnotherIntervalMap(mp, not_found_case="not found")
+print(m3)
+print(m3.slide(1))
+m3[Interval("[30, inf)")] = "very hot"
+print(m3)
+
+"""
