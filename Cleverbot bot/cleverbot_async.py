@@ -3,6 +3,9 @@ import hashlib
 import re
 import datetime
 from collections import deque
+import aiohttp
+import asyncio
+import httpx
 
 class CleverbotConversation:
     def __init__(self, max_context=100):
@@ -21,6 +24,7 @@ class CleverbotConversation:
                     r"\w+(?=;)",
                     req.headers["Set-cookie"]).group()
             }
+            print(self.cookies)
 
     def build_payload(self, stimulus):
         payload = f"stimulus={requests.utils.requote_uri(stimulus)}&"
@@ -36,18 +40,61 @@ class CleverbotConversation:
         return payload
 
     def send_cleverbot_request(self, payload):
+        print(self.cookies)
         req = requests.post(
             "https://www.cleverbot.com/webservicemin?uc=UseOfficialCleverbotAPI",
             cookies=self.cookies,
             data=payload
         )
+        print(req)
+        print(req.content)  # this string contains the necessary response that's actually unique
         get_response = re.split(r'\\r', str(req.content))[0]
         response = get_response[2:-1]
         return response
+    
+    async def send_cleverbot_request_async(self, payload):
+
+        async with httpx.AsyncClient() as client:
+            headers = {
+                'Cookie': '; '.join([f'{key}={value}' for key, value in self.cookies.items()])
+            }
+            response = await client.post(
+                "https://www.cleverbot.com/webservicemin?uc=UseOfficialCleverbotAPI",
+                data=payload,
+                headers=headers  # Send cookies as headers
+            )
+            content = response.text
+            print(content)
+            return content
+        
+        return
+
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                "https://www.cleverbot.com/webservicemin?uc=UseOfficialCleverbotAPI",
+                cookies=self.cookies,
+                data=payload
+            ) as response:
+                content = await response.text()
+                print(content)  # prints "Hello from Cleverbot" ALWAYS, ALL THE TIME
+
+                # get_response = re.split(r'\\r', str(content))[0]
+                # response = get_response[2:-1]
+                return content
 
     def respond(self, stimulus):
         payload = self.build_payload(stimulus)
         response = self.send_cleverbot_request(payload)
+        self.context_queue.append(stimulus)
+        self.context_queue.append(response)
+
+        print(self.context_queue)
+
+        return response
+    
+    async def respond_async(self, stimulus):
+        payload = self.build_payload(stimulus)
+        response = await self.send_cleverbot_request_async(payload)
         self.context_queue.append(stimulus)
         self.context_queue.append(response)
 
@@ -65,6 +112,19 @@ class CleverbotConversation:
             response = self.respond(user_input)
             print(f"Bot: {response}")
 
-if __name__ == "__main__":
+async def main_async():
     conversation = CleverbotConversation()
-    conversation.start_conversation()
+    while True:
+        user_input = input("You: ")
+        response = await conversation.respond_async(user_input)
+        print(f"Bot: {response}")
+
+async def main():
+    conversation = CleverbotConversation()
+    while True:
+        user_input = input("You: ")
+        response = conversation.respond(user_input)
+        print(f"Bot: {response}")
+
+if __name__ == "__main__":
+    asyncio.run(main_async())

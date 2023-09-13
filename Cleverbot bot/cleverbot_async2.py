@@ -3,9 +3,11 @@ import hashlib
 import re
 import datetime
 from collections import deque
+import aiohttp
+import asyncio
 
 class CleverbotConversation:
-    def __init__(self, max_context=100):
+    def __init__(self, max_context: int = 100):
         self.cookies = None
         self.context_queue = deque(maxlen=max_context)
         self.initialize_cookies()
@@ -21,11 +23,11 @@ class CleverbotConversation:
                     r"\w+(?=;)",
                     req.headers["Set-cookie"]).group()
             }
+            print(self.cookies)
 
-    def build_payload(self, stimulus):
+    def build_payload(self, stimulus: str):
         payload = f"stimulus={requests.utils.requote_uri(stimulus)}&"
 
-        # notice that the queue is reversed
         for i, context in enumerate(reversed(self.context_queue), start=2):
             payload += f"vText{i}={requests.utils.requote_uri(context)}&"
 
@@ -35,17 +37,33 @@ class CleverbotConversation:
         print(payload)
         return payload
 
-    def send_cleverbot_request(self, payload):
-        req = requests.post(
+    def send_cleverbot_request(self, payload: str):
+        # works perfectly fine
+
+        res = requests.post(
             "https://www.cleverbot.com/webservicemin?uc=UseOfficialCleverbotAPI",
             cookies=self.cookies,
             data=payload
         )
-        get_response = re.split(r'\\r', str(req.content))[0]
+
+        get_response = re.split(r'\\r', str(res.content))[0]
         response = get_response[2:-1]
         return response
+    
+    async def send_cleverbot_request_async(self, payload: str):
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                "https://www.cleverbot.com/webservicemin?uc=UseOfficialCleverbotAPI",
+                cookies=self.cookies,
+                data=payload,
+                allow_redirects=False
+            ) as response:
+                
+                content = await response.text()
+                # some possible further parsing here
+                return content
 
-    def respond(self, stimulus):
+    def respond(self, stimulus: str):
         payload = self.build_payload(stimulus)
         response = self.send_cleverbot_request(payload)
         self.context_queue.append(stimulus)
@@ -55,16 +73,37 @@ class CleverbotConversation:
 
         return response
     
+    async def respond_async(self, stimulus: str):
+        payload = self.build_payload(stimulus)
+        response = await self.send_cleverbot_request_async(payload)
+        self.context_queue.append(stimulus)
+        self.context_queue.append(response)
+
+        return response
+    
     def wipe_context(self):
         self.context_queue.clear()
 
-    def start_conversation(self):
-        print("Your conversation with Cleverbot has started.")
-        while True:
-            user_input = input("You: ")
-            response = self.respond(user_input)
-            print(f"Bot: {response}")
+
+async def main():
+    # works perfectly fine
+    conversation = CleverbotConversation()
+
+    while True:
+        user_input = input("You: ")
+        response = conversation.respond(user_input)
+        print(f"Bot: {response}")
+
+
+async def main_async():
+    # does NOT work
+    conversation = CleverbotConversation()
+
+    while True:
+        user_input = input("You: ")
+        response = await conversation.respond_async(user_input)
+        print(f"Bot: {response}")
+
 
 if __name__ == "__main__":
-    conversation = CleverbotConversation()
-    conversation.start_conversation()
+    asyncio.run(main_async())
