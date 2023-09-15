@@ -2,9 +2,10 @@ import discord
 from discord.ext import commands
 from dotenv import load_dotenv
 import os
+import asyncio
 load_dotenv()
 
-from cleverbot_async import CleverbotConversation
+from cleverbot_final import CleverbotConversation
 
 bot = commands.Bot(command_prefix='!', intents=discord.Intents.all())
 bot.cleverbot = CleverbotConversation(max_context=100)
@@ -23,11 +24,13 @@ async def on_message(message):
     
     if bot.user.mentioned_in(message):
         cleared_message = message.content.replace(f'<@{bot.user.id}>', '').strip()
-        response = await bot.cleverbot.respond_async(cleared_message)
-        await message.channel.send(response)
+
+        response = await asyncio.to_thread(bot.cleverbot.respond, cleared_message)
+
+        await message.reply(response)
         return
     
-    await bot.process_commands(message)  # Process commands after checking the message
+    await bot.process_commands(message)
     
 
 @bot.command()

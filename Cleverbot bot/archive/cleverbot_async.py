@@ -127,4 +127,4 @@ async def main():
         print(f"Bot: {response}")
 
 if __name__ == "__main__":
-    asyncio.run(main_async())
+    asyncio.run(main())
