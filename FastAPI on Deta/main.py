@@ -11,6 +11,18 @@ app = FastAPI()
 async def root():
     return "come forth"
 
+@app.get("/about")
+async def about():
+    return "about"
+
+
+@app.post("/api/test")
+async def test(request: Request):
+    json_data = await request.json()
+    return {"the_json_data": json_data}
+
+
+
 def construct_payload(stimulus: str, context: List[str]):
     payload = f"stimulus={requests.utils.requote_uri(stimulus)}&"
 
@@ -53,5 +65,7 @@ async def clevreq(request: Request):
 
     payload = construct_payload(stimulus, context)
     response = await asyncio.to_thread(get_cleverbot_response, payload, cookie)
+
+    print(f"Response is: ({response})")
 
     return response
