@@ -21,6 +21,7 @@ class CleverbotConversation:
                     r"\w+(?=;)",
                     req.headers["Set-cookie"]).group()
             }
+            print(self.cookies)
 
     def build_payload(self, stimulus):
         payload = f"stimulus={requests.utils.requote_uri(stimulus)}&"
