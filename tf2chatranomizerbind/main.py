@@ -56,6 +56,17 @@ def save_to_tfcfg(bind_script: str, tfcfg_path: str):
     print(f"created bind script at {bind_file}")
     print(f"config updated at {autoexec_file}")
 
+def read_messages_from_file(filename: str) -> List[Message]:
+    messages = []
+
+    with open(filename, 'r') as f:
+        for line in f.readline():
+            line = line.strip()
+            if line:
+                messages.append(Message(line))
+        
+    return messages
+
 # can be changed
 SEQUENCE_LEN = 100
 TFCFG_PATH = r"C:\Program Files (x86)\Steam\steamapps\common\Team Fortress 2\tf\cfg"
@@ -70,24 +81,10 @@ def create_pseudorandom_bind(messages: List[Message], key: str):
 if __name__ == "__main__":
     # feel free to change as much as your heart desires
     messages = [
-        Message("Do you know what he said to me today? 'Never heard of you.' Never!"),
-        Message("If I had taken a wrong step, would I have ended up like that, too?"),
-        Message("I'm feeling refreshed. I was stressed from you handing me my butt at all those games."),
-        Message("What's the matter? You don't like udon?"),
-        Message("I'll leave tomorrow's problems to tomorrow's me."),
-        Message("No matter how many monsters I defeat, inside, I'm bored out of my mind."),
-        Message("I told you, I'm busy. So anyone who gets in my way gets punched."),
-        Message("Crap. I forgot to buy kombu soup stock."),
-        Message("Martial arts are essentially... moves that look cool."),
-        Message("In exchange for power, maybe I've lost something that is essential to being human."),
-        Message("Did you see a butt-naked man run past us? Must have evacuated mid-bath."),
-        Message("If what you're after is having fun, don't get any stronger."),
-        Message("You did well on your own. Leave the rest to me."),
-        Message("100 push-ups, 100 sit-ups, 100 squats, and a 10km run!"),
-        Message("OK."),
+        *read_messages_from_file("bot.txt"),
         Message("I'm not a bottom.", 0.01)  # 0.01 = very rare, no guarantee itd even happen
     ]
-    # this too
+    # feel free to change this too
     key = 'h'
 
     create_pseudorandom_bind(messages, key)
