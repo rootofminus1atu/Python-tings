@@ -60,7 +60,7 @@ def read_messages_from_file(filename: str) -> List[Message]:
     messages = []
 
     with open(filename, 'r') as f:
-        for line in f.readline():
+        for line in f.readlines():
             line = line.strip()
             if line:
                 messages.append(Message(line))
